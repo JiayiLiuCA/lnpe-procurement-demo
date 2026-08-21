@@ -1,0 +1,284 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap">
+  <style>
+    body { margin:0; font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',system-ui,sans-serif; color:#2C2A2A; -webkit-font-smoothing:antialiased; }
+    a { color:#C75B00; text-decoration:none; } a:hover { color:#A34A00; }
+    * { box-sizing:border-box; }
+  </style>
+</helmet>
+<div style="width:1440px;height:1000px;display:flex;background:#F6F5F4;overflow:hidden;">
+
+  <div style="width:220px;flex-shrink:0;background:#2C2A2A;display:flex;flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:18px 20px 14px;">
+      <img src="lnpe-mark.png" style="width:34px;height:34px;border-radius:8px;" alt="LNPE">
+      <div>
+        <div style="color:#FFFFFF;font-size:15px;font-weight:700;letter-spacing:2px;">流能采购</div>
+        <div style="color:#8A8785;font-size:10.5px;margin-top:1px;letter-spacing:.4px;">LNPE PROCUREMENT</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:2px;padding:8px 12px;">
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;background:rgba(229,105,0,.16);color:#F49B47;font-size:13.5px;font-weight:500;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>工作台
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:#ABA8A6;font-size:13.5px;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>项目管理
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:#ABA8A6;font-size:13.5px;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>采购清单
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:#ABA8A6;font-size:13.5px;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg>库存管理
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:#ABA8A6;font-size:13.5px;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>合同管理
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:#ABA8A6;font-size:13.5px;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 8.5l3 4 3-4M12 12.5V17M9.5 14.5h5"/></svg>付款与发票
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:#ABA8A6;font-size:13.5px;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16V6H2v10h12z"/><path d="M14 9h4l3 3v4h-7"/><circle cx="5.5" cy="18" r="1.8"/><circle cx="17.5" cy="18" r="1.8"/></svg>收货记录
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:#ABA8A6;font-size:13.5px;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9.5" cy="7.5" r="3.5"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M15.5 4.1a3.5 3.5 0 0 1 0 6.8"/></svg>供应商
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:#ABA8A6;font-size:13.5px;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 9a6 6 0 1 0-12 0c0 6-2.5 7-2.5 7h17S18 15 18 9z"/><path d="M10.3 20a2 2 0 0 0 3.4 0"/></svg>提醒中心
+        <span style="margin-left:auto;background:#D23F31;color:#FFFFFF;font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:999px;">5</span>
+      </div>
+    </div>
+    <div style="margin-top:auto;padding:14px 16px;border-top:1px solid #403E3E;display:flex;align-items:center;gap:10px;">
+      <div style="width:30px;height:30px;border-radius:50%;background:#E56900;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;">赵</div>
+      <div>
+        <div style="color:#EFEEEC;font-size:13px;font-weight:500;">赵小燕</div>
+        <div style="color:#8A8785;font-size:11px;">采购部</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+    <div style="height:56px;flex-shrink:0;background:#FFFFFF;border-bottom:1px solid #E4E2E0;display:flex;align-items:center;padding:0 24px;gap:16px;">
+      <div style="font-size:15px;font-weight:700;">工作台</div>
+      <div style="font-size:12.5px;color:#8A8785;">2026-08-20 星期四</div>
+      <div style="flex:1;"></div>
+      <div style="display:flex;align-items:center;gap:8px;background:#F6F5F4;border:1px solid #E4E2E0;border-radius:8px;padding:7px 12px;width:250px;color:#ABA8A6;font-size:13px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20.5 20.5L16 16"/></svg>搜索项目 / 合同 / 产品
+      </div>
+      <div style="position:relative;color:#595757;display:flex;">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 9a6 6 0 1 0-12 0c0 6-2.5 7-2.5 7h17S18 15 18 9z"/><path d="M10.3 20a2 2 0 0 0 3.4 0"/></svg>
+        <div style="position:absolute;top:-2px;right:-3px;width:8px;height:8px;border-radius:50%;background:#D23F31;border:1.5px solid #FFFFFF;"></div>
+      </div>
+      <div style="width:32px;height:32px;border-radius:50%;background:#E56900;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;">赵</div>
+    </div>
+
+    <div style="flex:1;padding:20px 24px;display:flex;flex-direction:column;gap:16px;overflow:hidden;">
+
+      <div style="display:flex;gap:16px;">
+        <div style="flex:1;background:#FFFFFF;border:1px solid #E4E2E0;border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:6px;">
+          <div style="font-size:12.5px;color:#8A8785;">执行中合同</div>
+          <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;">12</span><span style="font-size:12.5px;color:#8A8785;">份</span></div>
+          <div style="font-size:12px;color:#8A8785;">合同总额 ¥24,683,000</div>
+        </div>
+        <div style="flex:1;background:#FFFFFF;border:1px solid #E4E2E0;border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:6px;">
+          <div style="font-size:12.5px;color:#8A8785;">近 30 天应付</div>
+          <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;">¥1,006,900</span></div>
+          <div style="font-size:12px;color:#8A8785;">3 笔 · 其中 <span style="color:#B03328;font-weight:500;">临期 1 笔</span></div>
+        </div>
+        <div style="flex:1;background:#FFFFFF;border:1px solid #E4E2E0;border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:6px;">
+          <div style="font-size:12.5px;color:#8A8785;">催发货 / 交货逾期</div>
+          <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;color:#D23F31;">2</span><span style="font-size:12.5px;color:#8A8785;">份合同</span></div>
+          <div style="font-size:12px;color:#8A8785;">最长已逾期 <span style="color:#B03328;font-weight:500;">82 天</span></div>
+        </div>
+        <div style="flex:1;background:#FFFFFF;border:1px solid #E4E2E0;border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:6px;">
+          <div style="font-size:12.5px;color:#8A8785;">待收货送货单</div>
+          <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;">2</span><span style="font-size:12.5px;color:#8A8785;">张 · 20 件</span></div>
+          <div style="font-size:12px;color:#8A8785;">今日预计到货 1 张</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:16px;flex:1;min-height:0;">
+        <div style="flex:1.55;background:#FFFFFF;border:1px solid #E4E2E0;border-radius:12px;display:flex;flex-direction:column;overflow:hidden;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #EFEEEC;">
+            <div style="font-size:15px;font-weight:700;">我的待办 <span style="color:#D23F31;">5</span></div>
+            <a style="font-size:12.5px;">全部待办</a>
+          </div>
+          <div style="display:flex;flex-direction:column;">
+            <div style="display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid #F6F5F4;">
+              <span style="flex-shrink:0;display:inline-flex;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:500;background:#FBF3DC;color:#8F650A;">清单审核</span>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">20260510 二粉(2) 第一批采购清单</div>
+                <div style="font-size:12px;color:#8A8785;">制表 肖济忠 · 08-19 提交</div>
+              </div>
+              <div style="flex-shrink:0;display:inline-flex;background:#FFFFFF;color:#2C2A2A;font-size:12.5px;font-weight:500;padding:6px 14px;border-radius:8px;border:1px solid #CFCCCA;">去审核</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid #F6F5F4;">
+              <span style="flex-shrink:0;display:inline-flex;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:500;background:#F0EBFA;color:#6447B8;">AI 初稿</span>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">常州锋杰 · 星型卸料阀等 6 项，合同初稿已生成</div>
+                <div style="font-size:12px;color:#8A8785;">项目 20260510 · 待校对定稿</div>
+              </div>
+              <div style="flex-shrink:0;display:inline-flex;background:#FFFFFF;color:#2C2A2A;font-size:12.5px;font-weight:500;padding:6px 14px;border-radius:8px;border:1px solid #CFCCCA;">去校对</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid #F6F5F4;">
+              <span style="flex-shrink:0;display:inline-flex;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:500;background:#FBF3DC;color:#8F650A;">付款临期</span>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">LNPE-XY20260307-05 验收款 30% <span style="font-variant-numeric:tabular-nums;">¥153,000</span></div>
+                <div style="font-size:12px;color:#8A8785;">项目 260209 · <span style="color:#8F650A;font-weight:500;">3 天后到期（08-23）</span></div>
+              </div>
+              <div style="flex-shrink:0;display:inline-flex;background:#FFFFFF;color:#2C2A2A;font-size:12.5px;font-weight:500;padding:6px 14px;border-radius:8px;border:1px solid #CFCCCA;">去登记</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid #F6F5F4;">
+              <span style="flex-shrink:0;display:inline-flex;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:500;background:#FBEAE8;color:#B03328;">催发货</span>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">LNPE-20260312030-SJ 浙江开山 · 离心式空压机 12 套</div>
+                <div style="font-size:12px;color:#8A8785;">交货期 05-30 · <span style="color:#B03328;font-weight:500;">已逾期 82 天</span></div>
+              </div>
+              <div style="flex-shrink:0;display:inline-flex;background:#D23F31;color:#FFFFFF;font-size:12.5px;font-weight:500;padding:6px 14px;border-radius:8px;">催发货</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;padding:12px 18px;">
+              <span style="flex-shrink:0;display:inline-flex;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:500;background:#FBEAE8;color:#B03328;">收货异常</span>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">06-09 送货单 · 配套法兰（圆）数量不符（实收 36/40）</div>
+                <div style="font-size:12px;color:#8A8785;">收货人 敬宏 · 现场已留照片 3 张</div>
+              </div>
+              <div style="flex-shrink:0;display:inline-flex;background:#FFFFFF;color:#2C2A2A;font-size:12.5px;font-weight:500;padding:6px 14px;border-radius:8px;border:1px solid #CFCCCA;">去处理</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="flex:1;background:#FFFFFF;border:1px solid #E4E2E0;border-radius:12px;display:flex;flex-direction:column;overflow:hidden;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #EFEEEC;">
+            <div style="font-size:15px;font-weight:700;">近 30 天付款计划</div>
+            <a style="font-size:12.5px;">付款台账</a>
+          </div>
+          <div style="display:flex;flex-direction:column;padding:4px 0;">
+            <div style="display:flex;align-items:center;gap:12px;padding:11px 18px;border-bottom:1px solid #F6F5F4;">
+              <div style="flex-shrink:0;width:44px;text-align:center;">
+                <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:#8F650A;">08-23</div>
+              </div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">…XY20260307-05 · 验收款 30%</div>
+                <div style="font-size:11.5px;color:#8A8785;">德阳金山分级机 · 260209</div>
+              </div>
+              <div style="font-size:13.5px;font-weight:700;font-variant-numeric:tabular-nums;">¥153,000</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;padding:11px 18px;border-bottom:1px solid #F6F5F4;">
+              <div style="flex-shrink:0;width:44px;text-align:center;">
+                <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:#595757;">09-02</div>
+              </div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">…20260605012-SJ · 发货款 50%</div>
+                <div style="font-size:11.5px;color:#8A8785;">山东章鼓 · 20260510</div>
+              </div>
+              <div style="font-size:13.5px;font-weight:700;font-variant-numeric:tabular-nums;">¥432,000</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;padding:11px 18px;border-bottom:1px solid #F6F5F4;">
+              <div style="flex-shrink:0;width:44px;text-align:center;">
+                <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:#595757;">09-15</div>
+              </div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">…XY2C260206-07 · 质保金 10%</div>
+                <div style="font-size:11.5px;color:#8A8785;">乐山协鑫二期 · 251230</div>
+              </div>
+              <div style="font-size:13.5px;font-weight:700;font-variant-numeric:tabular-nums;">¥421,900</div>
+            </div>
+          </div>
+          <div style="margin-top:auto;background:#FBEAE8;border-radius:0 0 12px 12px;padding:12px 18px;display:flex;align-items:center;gap:10px;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#B03328" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+            <div style="flex:1;font-size:12.5px;color:#B03328;">开山合同交货逾期 82 天，累计违约金约 <span style="font-weight:700;font-variant-numeric:tabular-nums;">¥606,144</span>（按 1‰/日）</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:#FFFFFF;border:1px solid #E4E2E0;border-radius:12px;display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #EFEEEC;">
+          <div style="font-size:15px;font-weight:700;">项目进度</div>
+          <a style="font-size:12.5px;">全部项目</a>
+        </div>
+        <div style="display:flex;background:#FBFAF9;border-bottom:1px solid #EFEEEC;padding:8px 18px;font-size:12px;font-weight:500;color:#8A8785;">
+          <div style="width:90px;">项目号</div><div style="width:210px;">项目名称</div><div style="flex:1;">阶段（订单→清单→核对→合同→付款→发货→收货）</div><div style="width:190px;">关键数字</div><div style="width:70px;">负责人</div>
+        </div>
+        <div style="display:flex;align-items:center;padding:11px 18px;border-bottom:1px solid #F6F5F4;font-size:13px;">
+          <div style="width:90px;font-weight:700;font-variant-numeric:tabular-nums;">20260510</div>
+          <div style="width:210px;">德阳锂电正极材料一期</div>
+          <div style="flex:1;display:flex;align-items:center;">
+            <div style="width:13px;height:13px;border-radius:50%;background:#E56900;"></div><div style="width:20px;height:2px;background:#E56900;"></div>
+            <div style="width:13px;height:13px;border-radius:50%;background:#E56900;"></div><div style="width:20px;height:2px;background:#E56900;"></div>
+            <div style="width:13px;height:13px;border-radius:50%;background:#E56900;"></div><div style="width:20px;height:2px;background:#E56900;"></div>
+            <div style="width:13px;height:13px;border-radius:50%;background:#FFFFFF;border:2.5px solid #E56900;"></div><div style="width:20px;height:2px;background:#E4E2E0;"></div>
+            <div style="width:13px;height:13px;border-radius:50%;background:#E4E2E0;"></div><div style="width:20px;height:2px;background:#E4E2E0;"></div>
+            <div style="width:13px;height:13px;border-radius:50%;background:#E4E2E0;"></div><div style="width:20px;height:2px;background:#E4E2E0;"></div>
+            <div style="width:13px;height:13px;border-radius:50%;background:#E4E2E0;"></div>
+            <span style="margin-left:10px;font-size:12px;font-weight:500;color:#C75B00;">合同生成 54/62</span>
+          </div>
+          <div style="width:190px;font-size:12.5px;color:#595757;">需采购 62 · 已入合同 54</div>
+          <div style="width:70px;color:#595757;">赵小燕</div>
+        </div>
+        <div style="display:flex;align-items:center;padding:11px 18px;border-bottom:1px solid #F6F5F4;font-size:13px;">
+          <div style="width:90px;font-weight:700;font-variant-numeric:tabular-nums;">260227</div>
+          <div style="width:210px;">鄂尔多斯空压机系统</div>
+          <div style="flex:1;display:flex;align-items:center;">
+            <div style="width:13px;height:13px;border-radius:50%;background:#E56900;"></div><div style="width:20px;height:2px;background:#E56900;"></div>
+            <div style="width:13px;height:13px;border-radius:50%;background:#E56900;"></div><div style="width:20px;height:2px;background:#E56900;"></div>
+            <div style="width:13px;height:13px;border-radius:50%;background:#E56900;"></div><div style="width:20px;height:2px;background:#E56900;"></div>
+            <div style="width:13px;height:13px;border-radius:50%;background:#E56900;"></div><div style="width:20px;height:2px;background:#E56900;"></div>
+            <div style="width:13px;height:13px;border-radius:50%;background:#E56900;"></div><div style="width:20px;height:2px;background:#E56900;"></div>
+            <div style="width:13px;height:13px;border-radius:50%;background:#FFFFFF;border:2.5px solid #D23F31;"></div><div style="width:20px;height:2px;background:#E4E2E0;"></div>
+            <div style="width:13px;height:13px;border-radius:50%;background:#E4E2E0;"></div>
+            <span style="margin-left:10px;display:inline-flex;padding:1px 8px;border-radius:999px;font-size:11.5px;font-weight:500;background:#FBEAE8;color:#B03328;">催发货 · 逾期 82 天</span>
+          </div>
+          <div style="width:190px;font-size:12.5px;color:#595757;">已付 60% · ¥4,435,200</div>
+          <div style="width:70px;color:#595757;">赵小燕</div>
+        </div>
+        <div style="display:flex;align-items:center;padding:11px 18px;border-bottom:1px solid #F6F5F4;font-size:13px;">
+          <div style="width:90px;font-weight:700;font-variant-numeric:tabular-nums;">260209</div>
+          <div style="width:210px;">德阳金山分级机改造</div>
+          <div style="flex:1;display:flex;align-items:center;">
+            <div style="width:13px;height:13px;border-radius:50%;background:#E56900;"></div><div style="width:20px;height:2px;background:#E56900;"></div>
+            <div style="width:13px;height:13px;border-radius:50%;background:#E56900;"></div><div style="width:20px;height:2px;background:#E56900;"></div>
+            <div style="width:13px;height:13px;border-radius:50%;background:#E56900;"></div><div style="width:20px;height:2px;background:#E56900;"></div>
+            <div style="width:13px;height:13px;border-radius:50%;background:#E56900;"></div><div style="width:20px;height:2px;background:#E56900;"></div>
+            <div style="width:13px;height:13px;border-radius:50%;background:#E56900;"></div><div style="width:20px;height:2px;background:#E56900;"></div>
+            <div style="width:13px;height:13px;border-radius:50%;background:#E56900;"></div><div style="width:20px;height:2px;background:#E56900;"></div>
+            <div style="width:13px;height:13px;border-radius:50%;background:#FFFFFF;border:2.5px solid #E56900;"></div>
+            <span style="margin-left:10px;font-size:12px;font-weight:500;color:#C75B00;">收货中 3/7 项</span>
+          </div>
+          <div style="width:190px;font-size:12.5px;color:#595757;">7 类 63 件 · 异常 1 项</div>
+          <div style="width:70px;color:#595757;">敬宏</div>
+        </div>
+        <div style="display:flex;align-items:center;padding:11px 18px;font-size:13px;">
+          <div style="width:90px;font-weight:700;font-variant-numeric:tabular-nums;">251230</div>
+          <div style="width:210px;">乐山协鑫二期</div>
+          <div style="flex:1;display:flex;align-items:center;">
+            <div style="width:13px;height:13px;border-radius:50%;background:#E56900;"></div><div style="width:20px;height:2px;background:#E56900;"></div>
+            <div style="width:13px;height:13px;border-radius:50%;background:#E56900;"></div><div style="width:20px;height:2px;background:#E56900;"></div>
+            <div style="width:13px;height:13px;border-radius:50%;background:#E56900;"></div><div style="width:20px;height:2px;background:#E56900;"></div>
+            <div style="width:13px;height:13px;border-radius:50%;background:#E56900;"></div><div style="width:20px;height:2px;background:#E56900;"></div>
+            <div style="width:13px;height:13px;border-radius:50%;background:#E56900;"></div><div style="width:20px;height:2px;background:#E56900;"></div>
+            <div style="width:13px;height:13px;border-radius:50%;background:#E56900;"></div><div style="width:20px;height:2px;background:#E56900;"></div>
+            <div style="width:13px;height:13px;border-radius:50%;background:#FFFFFF;border:2.5px solid #E56900;"></div>
+            <span style="margin-left:10px;font-size:12px;font-weight:500;color:#C75B00;">收货中 30/36 件</span>
+          </div>
+          <div style="width:190px;font-size:12.5px;color:#595757;">质保金 09-15 到期 1 笔</div>
+          <div style="width:70px;color:#595757;">敬宏</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

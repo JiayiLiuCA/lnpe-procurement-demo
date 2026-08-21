@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #E56900;        /* 品牌橙（logo 实测），主操作 */
+  --color-primary-hover: #C75B00;
+  --color-primary-soft: #FDF1E5;
+  --color-ink: #2C2A2A;            /* 正文 / 侧边栏底 */
+  --color-ink-2: #595757;          /* 品牌炭灰 */
+  --color-sub: #8A8785;            /* 辅助文字 */
+  --color-faint: #ABA8A6;
+  --color-page: #F6F5F4;           /* 页面底 */
+  --color-card: #FFFFFF;
+  --color-line: #E4E2E0;           /* 边框 */
+  --color-line-soft: #EFEEEC;
+  --color-sidebar-active: #F49B47; /* 侧栏激活字色 */
+  --color-success: #1B8A4C;  --color-success-bg: #E5F5EC;  --color-success-deep: #166B3C;
+  --color-warning: #B07C0C;  --color-warning-bg: #FBF3DC;  --color-warning-deep: #8F650A;
+  --color-danger:  #D23F31;  --color-danger-bg:  #FBEAE8;  --color-danger-deep:  #B03328;
+  --color-info:    #0E7C86;  --color-info-bg:    #E1F4F5;  --color-info-deep:    #0B6570;
+  --color-ai:      #7A5BD0;  --color-ai-bg:      #F0EBFA;  --color-ai-deep:      #6447B8;
+  --font-sans: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --radius-card: 12px;
+  --radius-ctl: 8px;
+}
+
+html {
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  background: var(--color-page);
+}
+
+body {
+  min-height: 100dvh;
+}
+
+/* 隐藏滚动条但保留滚动能力（Tab 条等窄条容器用） */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
