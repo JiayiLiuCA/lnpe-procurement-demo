@@ -49,6 +49,7 @@ export default function ChecklistsPage() {
                 </div>
                 <div className="text-ink-2 w-[220px] text-[12.5px]">
                   {stats.total} 项 · 已分配 {stats.allocated} · 需采购 {stats.need}
+                  {stats.produce > 0 && ` · 安排生产 ${stats.produce}`}
                 </div>
                 <div className="text-sub w-[140px] text-[12.5px]">
                   制表 {cl.signoff.maker} {fmtDate(cl.signoff.makerAt)}

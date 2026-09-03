@@ -19,8 +19,8 @@ import { useAppStore } from "@/store/useAppStore";
 const NAV = [
   { href: "/", label: "工作台", icon: LayoutGrid },
   { href: "/projects", label: "项目管理", icon: Folder },
-  { href: "/inventory", label: "库存管理", icon: Package },
   { href: "/contracts", label: "合同管理", icon: FileText },
+  { href: "/inventory", label: "库存管理", icon: Package },
   { href: "/finance", label: "付款与发票", icon: CircleDollarSign },
   { href: "/receipts", label: "收货记录", icon: Truck },
   { href: "/suppliers", label: "供应商", icon: Users },

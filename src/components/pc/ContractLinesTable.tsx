@@ -65,7 +65,7 @@ export function ContractLinesTable({ contract, editable = false }: { contract: C
           {qtySum} {unitLabel}
         </div>
         <div className="w-[110px]" />
-        <div className="text-primary-hover w-[120px] text-right font-bold">
+        <div className="w-[120px] text-right font-bold">
           {total != null ? <Money value={total} /> : <span className="text-faint text-xs font-medium">单价待补充</span>}
         </div>
         <div className="text-sub flex-[2] pl-6 text-xs">税率变化时不含税金额不变，按不含税金额加相应税率</div>

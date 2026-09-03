@@ -16,8 +16,13 @@ function StatusDot({ m }: { m: Milestone }) {
       </span>
     );
   }
-  if (m.status === "due" || m.status === "pending") {
-    return <span className="border-primary h-5 w-5 shrink-0 rounded-full border-[2.5px] bg-white" />;
+  if (m.status === "due") {
+    const d = m.dueAt ? daysUntil(m.dueAt) : 99;
+    const ring = d < 0 ? "border-danger" : d <= 7 ? "border-warning" : "border-info";
+    return <span className={`${ring} h-5 w-5 shrink-0 rounded-full border-[2.5px] bg-white`} />;
+  }
+  if (m.status === "pending") {
+    return <span className="border-line h-5 w-5 shrink-0 rounded-full border-[2.5px] bg-white" />;
   }
   return <span className="bg-line h-5 w-5 shrink-0 rounded-full" />;
 }

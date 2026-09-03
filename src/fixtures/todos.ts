@@ -12,6 +12,15 @@ export const todos: Todo[] = [
     href: "/projects/p-20260510?phase=2",
   },
   {
+    id: "t-cl-260706",
+    kind: "review",
+    pillText: "清单审核",
+    title: "260706 磷酸铁锂二粉线 第一批采购清单",
+    sub: "制表 肖济忠 · 08-14 提交 · 待核对 5 项",
+    actionLabel: "去审核",
+    href: "/projects/p-260706?phase=2",
+  },
+  {
     id: "t-2",
     kind: "ai_draft",
     pillText: "AI 初稿",
@@ -31,11 +40,11 @@ export const todos: Todo[] = [
   },
   {
     id: "t-4",
-    kind: "expedite",
-    pillText: "催发货",
+    kind: "delivery_overdue",
+    pillText: "交货逾期",
     title: "LNPE-20260312030-SJ 浙江开山 · 离心式空压机 12 套",
-    sub: "交货期 05-30 · 已逾期 82 天",
-    actionLabel: "催发货",
+    sub: "交货期 05-30 · 已逾期 82 天 · 请与卖方经办确认发货安排",
+    actionLabel: "查看合同",
     href: "/contracts/c-kaishan-1",
   },
   {

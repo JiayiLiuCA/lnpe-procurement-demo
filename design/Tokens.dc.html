@@ -10,26 +10,32 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap">
   <style>
     body { margin:0; font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',system-ui,sans-serif; color:#2C2A2A; -webkit-font-smoothing:antialiased; }
-    a { color:#C75B00; text-decoration:none; } a:hover { color:#A34A00; }
+    a { color:#C16215; text-decoration:none; } a:hover { color:#DA711B; }
     * { box-sizing:border-box; }
   </style>
 </helmet>
-<div style="width:1060px;height:1560px;background:#FFFFFF;padding:36px 40px;display:flex;flex-direction:column;gap:26px;overflow:hidden;">
+<div style="width:1060px;height:1860px;background:#FFFFFF;padding:36px 40px;display:flex;flex-direction:column;gap:26px;overflow:hidden;">
 
   <div style="display:flex;align-items:center;justify-content:space-between;">
     <div style="display:flex;flex-direction:column;gap:8px;">
       <img src="lnpe-logo.png" style="width:230px;height:auto;" alt="LNPE 流能">
-      <div style="font-size:18px;font-weight:700;color:#2C2A2A;">采购管理系统 · Design Tokens <span style="color:#8A8785;font-weight:400;font-size:13px;">v1</span></div>
+      <div style="font-size:18px;font-weight:700;color:#2C2A2A;">采购管理系统 · Design Tokens <span style="color:#8A8785;font-weight:400;font-size:13px;">v1.1</span></div>
     </div>
-    <div style="font-size:12px;color:#8A8785;text-align:right;line-height:1.8;">取色自品牌 Logo：主橙 #E56900 · 炭灰 #595757<br>字体 Noto Sans SC / PingFang SC / Microsoft YaHei</div>
+    <div style="font-size:12px;color:#8A8785;text-align:right;line-height:1.8;">取色自品牌 Logo：品牌橙 #E56900 · 炭灰 #595757<br><span style="color:#166B3C;font-weight:500;">v1.1（2026-09-02）：橙色只做品牌与主操作，状态一律语义色</span><br>字体 Noto Sans SC / PingFang SC / Microsoft YaHei</div>
   </div>
 
   <div style="display:flex;flex-direction:column;gap:10px;">
     <div style="font-size:14px;font-weight:700;">品牌色</div>
     <div style="display:flex;gap:12px;">
-      <div style="flex:1;background:#E56900;border-radius:12px;padding:16px;color:#FFFFFF;display:flex;flex-direction:column;justify-content:flex-end;height:96px;">
-        <div style="font-size:14px;font-weight:700;">主色 Primary</div>
-        <div style="font-size:12px;opacity:.9;">--c-primary · #E56900</div>
+      <div style="flex:1;display:flex;border-radius:12px;overflow:hidden;height:96px;">
+        <div style="flex:1;background:#E56900;padding:14px 12px;color:#FFFFFF;display:flex;flex-direction:column;justify-content:flex-end;">
+          <div style="font-size:13px;font-weight:700;">品牌橙 Brand</div>
+          <div style="font-size:11px;opacity:.9;line-height:1.5;">--c-brand · #E56900<br>只用于 logo、侧栏激活</div>
+        </div>
+        <div style="flex:1;background:#DA711B;padding:14px 12px;color:#FFFFFF;display:flex;flex-direction:column;justify-content:flex-end;">
+          <div style="font-size:13px;font-weight:700;">UI 橙 Primary</div>
+          <div style="font-size:11px;opacity:.9;line-height:1.5;">--c-primary · #DA711B<br>主按钮实底 · 链接 #C16215</div>
+        </div>
       </div>
       <div style="flex:1;background:#595757;border-radius:12px;padding:16px;color:#FFFFFF;display:flex;flex-direction:column;justify-content:flex-end;height:96px;">
         <div style="font-size:14px;font-weight:700;">墨色 Ink（品牌灰）</div>
@@ -47,8 +53,8 @@
       <div style="flex:1;height:44px;background:#F2A360;display:flex;align-items:flex-end;padding:5px 7px;font-size:10.5px;color:#7A3700;">300<br>F2A360</div>
       <div style="flex:1;height:44px;background:#EC8527;display:flex;align-items:flex-end;padding:5px 7px;font-size:10.5px;color:#FFFFFF;">400<br>EC8527</div>
       <div style="flex:1;height:44px;background:#E56900;display:flex;align-items:flex-end;padding:5px 7px;font-size:10.5px;color:#FFFFFF;font-weight:700;">500 ★<br>E56900</div>
-      <div style="flex:1;height:44px;background:#C75B00;display:flex;align-items:flex-end;padding:5px 7px;font-size:10.5px;color:#FFFFFF;">600<br>C75B00</div>
-      <div style="flex:1;height:44px;background:#A34A00;border-radius:0 8px 8px 0;display:flex;align-items:flex-end;padding:5px 7px;font-size:10.5px;color:#FFFFFF;">700<br>A34A00</div>
+      <div style="flex:1;height:44px;background:#DA711B;display:flex;align-items:flex-end;padding:5px 7px;font-size:10.5px;color:#FFFFFF;">600 UI 橙<br>DA711B</div>
+      <div style="flex:1;height:44px;background:#C16215;border-radius:0 8px 8px 0;display:flex;align-items:flex-end;padding:5px 7px;font-size:10.5px;color:#FFFFFF;">700 链接/hover<br>C16215</div>
     </div>
     <div style="display:flex;gap:6px;">
       <div style="flex:1;height:44px;background:#FBFAF9;border:1px solid #EFEEEC;border-radius:8px 0 0 8px;display:flex;align-items:flex-end;padding:5px 7px;font-size:10.5px;color:#8A8785;">25<br>FBFAF9</div>
@@ -63,16 +69,16 @@
   </div>
 
   <div style="display:flex;flex-direction:column;gap:10px;">
-    <div style="font-size:14px;font-weight:700;">语义色 <span style="font-weight:400;color:#8A8785;font-size:12px;">（状态标签 = 浅底 + 深字，同明度同彩度，仅变换色相）</span></div>
+    <div style="font-size:14px;font-weight:700;">语义色 <span style="font-weight:400;color:#8A8785;font-size:12px;">（状态一律语义色，橙色不表达状态；标签 = 浅底 + 深字，仅变换色相）</span></div>
     <div style="display:flex;gap:10px;">
       <div style="flex:1;border:1px solid #E4E2E0;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;">
         <div style="display:flex;align-items:center;gap:8px;"><div style="width:14px;height:14px;border-radius:4px;background:#1B8A4C;"></div><div style="font-size:13px;font-weight:500;">成功 #1B8A4C</div></div>
-        <div style="font-size:11.5px;color:#8A8785;">已付款 · 已批准 · 已收货 · 已分配</div>
+        <div style="font-size:11.5px;color:#8A8785;">阶段已完成 · 已付款 · 已批准 · 已收货 · 已分配</div>
         <div><span style="display:inline-flex;align-items:center;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:500;background:#E5F5EC;color:#166B3C;">已批准</span></div>
       </div>
       <div style="flex:1;border:1px solid #E4E2E0;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;">
         <div style="display:flex;align-items:center;gap:8px;"><div style="width:14px;height:14px;border-radius:4px;background:#B07C0C;"></div><div style="font-size:13px;font-weight:500;">警告 #B07C0C</div></div>
-        <div style="font-size:11.5px;color:#8A8785;">临期付款 · 待审核 · 待校对</div>
+        <div style="font-size:11.5px;color:#8A8785;">需采购 · 待确认 · 临期付款 · 待审核 · 待签订</div>
         <div><span style="display:inline-flex;align-items:center;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:500;background:#FBF3DC;color:#8F650A;">3 天后到期</span></div>
       </div>
       <div style="flex:1;border:1px solid #E4E2E0;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;">
@@ -82,13 +88,48 @@
       </div>
       <div style="flex:1;border:1px solid #E4E2E0;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;">
         <div style="display:flex;align-items:center;gap:8px;"><div style="width:14px;height:14px;border-radius:4px;background:#0E7C86;"></div><div style="font-size:13px;font-weight:500;">信息 #0E7C86</div></div>
-        <div style="font-size:11.5px;color:#8A8785;">执行中 · 生产中 · 在途</div>
+        <div style="font-size:11.5px;color:#8A8785;">当前阶段 · 执行中 · 生产中 · 收货中 · 今日到货</div>
         <div><span style="display:inline-flex;align-items:center;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:500;background:#E1F4F5;color:#0B6570;">执行中</span></div>
       </div>
       <div style="flex:1;border:1px solid #E4E2E0;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;">
         <div style="display:flex;align-items:center;gap:8px;"><div style="width:14px;height:14px;border-radius:4px;background:#7A5BD0;"></div><div style="font-size:13px;font-weight:500;">AI #7A5BD0</div></div>
         <div style="font-size:11.5px;color:#8A8785;">AI 初稿 · AI 解析（仅此一处使用）</div>
         <div><span style="display:inline-flex;align-items:center;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:500;background:#F0EBFA;color:#6447B8;">AI 初稿</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:10px;">
+    <div style="font-size:14px;font-weight:700;">颜色语义规则 <span style="font-weight:400;color:#8A8785;font-size:12px;">v1.1 · 2026-09-02 定稿 · 橙色只做品牌与主操作，不做状态色；一屏内橙色不超过 2～3 处</span></div>
+    <div style="display:flex;gap:12px;align-items:stretch;">
+      <div style="flex:1.25;border:1px solid #E4E2E0;border-radius:10px;overflow:hidden;font-size:12px;">
+        <div style="display:flex;background:#FBFAF9;border-bottom:1px solid #EFEEEC;padding:7px 12px;color:#8A8785;font-weight:500;"><div style="width:120px;">语义</div><div style="width:110px;">颜色</div><div style="flex:1;">用在</div></div>
+        <div style="display:flex;align-items:center;padding:6px 12px;border-bottom:1px solid #F3F2F0;"><div style="width:120px;font-weight:500;color:#2C2A2A;">已完成 / 通过 / 已付</div><div style="width:110px;display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:3px;background:#1B8A4C;display:inline-block;"></span>绿 success</div><div style="flex:1;color:#595757;">阶段勾、里程碑已付段、收货已确认、审核通过、覆盖率 100%</div></div>
+        <div style="display:flex;align-items:center;padding:6px 12px;border-bottom:1px solid #F3F2F0;"><div style="width:120px;font-weight:500;color:#2C2A2A;">进行中 / 当前</div><div style="width:110px;display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:3px;background:#0E7C86;display:inline-block;"></span>青 info</div><div style="flex:1;color:#595757;">当前阶段描边、进度条进行段、收货中、今日到货、已入合同</div></div>
+        <div style="display:flex;align-items:center;padding:6px 12px;border-bottom:1px solid #F3F2F0;"><div style="width:120px;font-weight:500;color:#2C2A2A;">待处理 / 临期</div><div style="width:110px;display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:3px;background:#B07C0C;display:inline-block;"></span>琥珀 warning</div><div style="flex:1;color:#595757;">需采购、待确认、待覆盖、剩 ≤7 天、待审核、待签订</div></div>
+        <div style="display:flex;align-items:center;padding:6px 12px;border-bottom:1px solid #F3F2F0;"><div style="width:120px;font-weight:500;color:#2C2A2A;">逾期 / 异常</div><div style="width:110px;display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:3px;background:#D23F31;display:inline-block;"></span>红 danger</div><div style="flex:1;color:#595757;">逾期、催发货、收货异常</div></div>
+        <div style="display:flex;align-items:center;padding:6px 12px;border-bottom:1px solid #F3F2F0;"><div style="width:120px;font-weight:500;color:#2C2A2A;">未开始 / 已结束</div><div style="width:110px;display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:3px;background:#ABA8A6;display:inline-block;"></span>灰 neutral</div><div style="flex:1;color:#595757;">未开始阶段、已结束项目、待触发、未生成</div></div>
+        <div style="display:flex;align-items:center;padding:6px 12px;border-bottom:1px solid #F3F2F0;"><div style="width:120px;font-weight:500;color:#2C2A2A;">选中态</div><div style="width:110px;display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:3px;background:#2C2A2A;display:inline-block;"></span>墨 ink</div><div style="flex:1;color:#595757;">筛选条选中、Tab 选中、勾选框、阶段条正在查看的标签</div></div>
+        <div style="display:flex;align-items:center;padding:6px 12px;border-bottom:1px solid #F3F2F0;"><div style="width:120px;font-weight:500;color:#2C2A2A;">品牌 / 主操作</div><div style="width:110px;display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:3px;background:#DA711B;display:inline-block;"></span>橙 primary</div><div style="flex:1;color:#595757;">logo、侧栏激活、每页一个主按钮、可点击链接、AI 上传入口</div></div>
+        <div style="display:flex;align-items:center;padding:6px 12px;"><div style="width:120px;font-weight:500;color:#2C2A2A;">AI 产物</div><div style="width:110px;display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:3px;background:#7A5BD0;display:inline-block;"></span>紫 ai</div><div style="flex:1;color:#595757;">AI 初稿 · 待校对 · 解析结果（仅此一处使用）</div></div>
+      </div>
+      <div style="flex:1;border:1px solid #E4E2E0;border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:9px;font-size:12px;">
+        <div style="color:#8A8785;">项目列表 · 阶段标签条</div>
+        <div style="display:flex;align-items:center;gap:8px;"><span style="width:52px;color:#ABA8A6;">v1 作废</span><div style="display:flex;gap:5px;align-items:center;opacity:.55;"><span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:500;background:#E56900;color:#FFFFFF;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>订单接收</span><span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:500;background:#E56900;color:#FFFFFF;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>采购清单</span><span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:500;background:#FFFFFF;color:#C75B00;border:1.5px solid #E56900;font-weight:700;">合同执行</span><span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:500;background:#EFEEEC;color:#ABA8A6;">订单关闭</span><span style="color:#C75B00;font-weight:500;">合同覆盖 54/62</span></div></div>
+        <div style="display:flex;align-items:center;gap:8px;"><span style="width:52px;color:#166B3C;font-weight:700;">v1.1</span><div style="display:flex;gap:5px;align-items:center;"><span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:500;background:#E5F5EC;color:#166B3C;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#166B3C" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>订单接收</span><span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:500;background:#E5F5EC;color:#166B3C;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#166B3C" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>采购清单</span><span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:500;background:#FFFFFF;color:#0B6570;border:1.5px solid #0E7C86;font-weight:700;">合同执行</span><span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:500;background:#EFEEEC;color:#ABA8A6;">订单关闭</span><span style="color:#595757;">合同覆盖 54/62</span></div></div>
+        <div style="display:flex;align-items:center;gap:8px;"><span style="width:52px;color:#8A8785;">催发货</span><div style="display:flex;gap:5px;align-items:center;"><span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:500;background:#E5F5EC;color:#166B3C;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#166B3C" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>订单接收</span><span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:500;background:#E5F5EC;color:#166B3C;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#166B3C" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>采购清单</span><span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:500;background:#FFFFFF;color:#B03328;border:1.5px solid #D23F31;font-weight:700;">合同执行</span><span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:500;background:#EFEEEC;color:#ABA8A6;">订单关闭</span><span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:500;background:#FBEAE8;color:#B03328;">催发货 · 逾期 82 天</span></div></div>
+        <div style="border-top:1px solid #EFEEEC;padding-top:9px;color:#8A8785;">筛选 / Tab / 勾选 = 墨色选中态</div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="display:inline-flex;padding:3px 11px;border-radius:999px;font-size:12px;font-weight:500;background:#2C2A2A;color:#FFFFFF;">全部 5</span>
+          <span style="display:inline-flex;padding:3px 11px;border-radius:999px;font-size:12px;font-weight:500;background:#FFFFFF;color:#595757;border:1px solid #E4E2E0;">进行中 4</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;"><span style="width:14px;height:14px;border-radius:3px;background:#2C2A2A;display:inline-flex;align-items:center;justify-content:center;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>已选 3 项</span>
+          <span style="font-size:12.5px;font-weight:700;color:#2C2A2A;border-bottom:2px solid #2C2A2A;padding-bottom:2px;">付款计划</span><span style="font-size:12.5px;color:#595757;">收货任务</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="color:#8A8785;">进度条：</span>
+          <div style="display:flex;gap:3px;height:8px;width:150px;"><div style="width:10%;background:#1B8A4C;border-radius:3px;"></div><div style="width:50%;background:#1B8A4C;border-radius:3px;"></div><div style="width:30%;background:#E4E2E0;border-radius:3px;"></div><div style="width:10%;background:#E4E2E0;border-radius:3px;"></div></div><span style="color:#166B3C;">已付 60%</span>
+          <div style="height:8px;width:110px;background:#EFEEEC;border-radius:4px;overflow:hidden;"><div style="width:87%;height:100%;background:#0E7C86;"></div></div><span style="color:#0B6570;">覆盖 87%</span>
+        </div>
       </div>
     </div>
   </div>
@@ -129,8 +170,9 @@
       <div style="font-size:14px;font-weight:700;">CSS Variables <span style="font-weight:400;color:#8A8785;font-size:12px;">开发时直接取用</span></div>
       <div style="background:#2C2A2A;border-radius:10px;padding:16px 18px;font-family:Consolas,'SFMono-Regular',monospace;font-size:12px;line-height:1.85;color:#CFCCCA;flex:1;">
         <span style="color:#8A8785;">:root {</span><br>
-        &nbsp;&nbsp;--c-primary: <span style="color:#F2A360;">#E56900</span>;<br>
-        &nbsp;&nbsp;--c-primary-hover: <span style="color:#F2A360;">#C75B00</span>;<br>
+        &nbsp;&nbsp;--c-brand: <span style="color:#F2A360;">#E56900</span>; <span style="color:#8A8785;">/* logo · 侧栏 */</span><br>
+        &nbsp;&nbsp;--c-primary: <span style="color:#F2A360;">#DA711B</span>; <span style="color:#8A8785;">/* UI 橙 · 主按钮 */</span><br>
+        &nbsp;&nbsp;--c-primary-hover: <span style="color:#F2A360;">#C16215</span>; <span style="color:#8A8785;">/* 链接 */</span><br>
         &nbsp;&nbsp;--c-primary-soft: <span style="color:#F2A360;">#FDF1E5</span>;<br>
         &nbsp;&nbsp;--c-ink: <span style="color:#F2A360;">#2C2A2A</span>; --c-ink-2: <span style="color:#F2A360;">#595757</span>;<br>
         &nbsp;&nbsp;--c-text-sub: <span style="color:#F2A360;">#8A8785</span>;<br>
@@ -153,9 +195,9 @@
     <div style="font-size:14px;font-weight:700;">核心组件</div>
     <div style="border:1px solid #E4E2E0;border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:16px;background:#FBFAF9;">
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-        <div style="display:inline-flex;align-items:center;gap:6px;background:#E56900;color:#FFFFFF;font-size:13px;font-weight:500;padding:8px 16px;border-radius:8px;">生成采购合同</div>
+        <div style="display:inline-flex;align-items:center;gap:6px;background:#DA711B;color:#FFFFFF;font-size:13px;font-weight:500;padding:8px 16px;border-radius:8px;">生成采购合同</div>
         <div style="display:inline-flex;align-items:center;gap:6px;background:#FFFFFF;color:#2C2A2A;font-size:13px;font-weight:500;padding:8px 16px;border-radius:8px;border:1px solid #CFCCCA;">下载 xlsx</div>
-        <div style="display:inline-flex;align-items:center;gap:6px;background:transparent;color:#C75B00;font-size:13px;font-weight:500;padding:8px 12px;border-radius:8px;">展开全部</div>
+        <div style="display:inline-flex;align-items:center;gap:6px;background:transparent;color:#C16215;font-size:13px;font-weight:500;padding:8px 12px;border-radius:8px;">展开全部</div>
         <div style="display:inline-flex;align-items:center;gap:6px;background:#D23F31;color:#FFFFFF;font-size:13px;font-weight:500;padding:8px 16px;border-radius:8px;">催发货</div>
         <div style="width:1px;height:24px;background:#E4E2E0;"></div>
         <span style="display:inline-flex;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:500;background:#E5F5EC;color:#166B3C;">已批准</span>
@@ -163,15 +205,15 @@
         <span style="display:inline-flex;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:500;background:#FBF3DC;color:#8F650A;">待审核</span>
         <span style="display:inline-flex;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:500;background:#FBEAE8;color:#B03328;">逾期 82 天</span>
         <span style="display:inline-flex;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:500;background:#F0EBFA;color:#6447B8;">AI 初稿</span>
-        <span style="display:inline-flex;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:500;background:#FDF1E5;color:#A34A00;">需采购</span>
+        <span style="display:inline-flex;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:500;background:#FBF3DC;color:#8F650A;">需采购</span>
         <span style="display:inline-flex;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:500;background:#EFEEEC;color:#595757;">已完结</span>
       </div>
       <div style="display:flex;gap:24px;">
         <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
           <div style="display:flex;justify-content:space-between;font-size:12px;color:#8A8785;"><span>付款里程碑 10 / 50 / 30 / 10</span><span style="color:#166B3C;font-weight:500;">已付 60%</span></div>
           <div style="display:flex;gap:3px;height:10px;">
-            <div style="width:10%;background:#E56900;border-radius:3px;"></div>
-            <div style="width:50%;background:#E56900;border-radius:3px;"></div>
+            <div style="width:10%;background:#1B8A4C;border-radius:3px;"></div>
+            <div style="width:50%;background:#1B8A4C;border-radius:3px;"></div>
             <div style="width:30%;background:#E4E2E0;border-radius:3px;"></div>
             <div style="width:10%;background:#E4E2E0;border-radius:3px;"></div>
           </div>
@@ -180,22 +222,16 @@
           </div>
         </div>
         <div style="flex:1;display:flex;flex-direction:column;gap:8px;">
-          <div style="font-size:12px;color:#8A8785;">项目七步进度（订单→清单→核对→合同→付款→发货→收货）</div>
+          <div style="font-size:12px;color:#8A8785;">项目阶段进度（v1.1 四大阶段）：绿勾 = 已完成 · 青环 = 当前 · 灰 = 未开始</div>
           <div style="display:flex;align-items:center;">
-            <div style="width:16px;height:16px;border-radius:50%;background:#E56900;display:flex;align-items:center;justify-content:center;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
-            <div style="width:26px;height:2px;background:#E56900;"></div>
-            <div style="width:16px;height:16px;border-radius:50%;background:#E56900;display:flex;align-items:center;justify-content:center;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
-            <div style="width:26px;height:2px;background:#E56900;"></div>
-            <div style="width:16px;height:16px;border-radius:50%;background:#E56900;display:flex;align-items:center;justify-content:center;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
-            <div style="width:26px;height:2px;background:#E56900;"></div>
-            <div style="width:16px;height:16px;border-radius:50%;background:#FFFFFF;border:2.5px solid #E56900;"></div>
-            <div style="width:26px;height:2px;background:#E4E2E0;"></div>
+            <div style="width:16px;height:16px;border-radius:50%;background:#1B8A4C;display:flex;align-items:center;justify-content:center;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+            <div style="width:34px;height:2px;background:#1B8A4C;"></div>
+            <div style="width:16px;height:16px;border-radius:50%;background:#1B8A4C;display:flex;align-items:center;justify-content:center;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+            <div style="width:34px;height:2px;background:#1B8A4C;"></div>
+            <div style="width:16px;height:16px;border-radius:50%;background:#FFFFFF;border:2.5px solid #0E7C86;"></div>
+            <div style="width:34px;height:2px;background:#E4E2E0;"></div>
             <div style="width:16px;height:16px;border-radius:50%;background:#E4E2E0;"></div>
-            <div style="width:26px;height:2px;background:#E4E2E0;"></div>
-            <div style="width:16px;height:16px;border-radius:50%;background:#E4E2E0;"></div>
-            <div style="width:26px;height:2px;background:#E4E2E0;"></div>
-            <div style="width:16px;height:16px;border-radius:50%;background:#E4E2E0;"></div>
-            <div style="margin-left:10px;font-size:12px;font-weight:500;color:#C75B00;">合同生成中 54/62</div>
+            <div style="margin-left:10px;font-size:12px;color:#595757;">合同覆盖 54/62</div>
           </div>
         </div>
       </div>
@@ -208,15 +244,15 @@
           <div style="flex:2;"><span style="font-weight:500;">罗茨风机</span><span style="color:#8A8785;font-size:12px;"> · FSR-150V · 铸铁</span></div>
           <div style="width:80px;font-variant-numeric:tabular-nums;">2 套</div>
           <div style="flex:3;color:#595757;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">品牌：章鼓/陕鼓 — 流量18.7m³/min，功率30KW… <a>展开</a></div>
-          <div style="width:110px;"><span style="display:inline-flex;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:500;background:#FDF1E5;color:#A34A00;">需采购</span></div>
+          <div style="width:110px;"><span style="display:inline-flex;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:500;background:#FBF3DC;color:#8F650A;">需采购</span></div>
         </div>
       </div>
     </div>
   </div>
 
   <div style="margin-top:auto;font-size:11.5px;color:#ABA8A6;border-top:1px solid #EFEEEC;padding-top:12px;display:flex;justify-content:space-between;">
-    <span>LNPE 采购管理系统 · 设计规范 · 2026-08</span>
-    <span>侧边栏 #2C2A2A · 页面底 #F6F5F4 · 卡片 #FFFFFF · 主操作一律品牌橙</span>
+    <span>LNPE 采购管理系统 · 设计规范 · v1.1 · 2026-09-02</span>
+    <span>侧边栏 #2C2A2A · 页面底 #F6F5F4 · 卡片 #FFFFFF · 橙色仅品牌与主操作，状态一律语义色</span>
   </div>
 </div>
 </x-dc>

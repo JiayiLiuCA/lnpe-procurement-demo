@@ -1,8 +1,158 @@
 import type { Checklist } from "@/lib/types";
 import { buildRows } from "./checklist-20260510";
 
-// 其余四个项目的采购清单：行状态与各自合同的覆盖关系保持一致，
+// 其余项目的采购清单：行状态与各自合同的覆盖关系保持一致，
 // 供项目统计（总需采购/库存已分配/覆盖）与合同覆盖进度条派生。
+
+// 260706 青海泰丰磷酸铁锂二粉线：第一批已提交待审核，12 行 = 2 全分配 + 1 部分 + 3 需采购 + 1 安排生产 + 5 待核对，尚无合同
+const cl260706: Checklist = {
+  id: "cl-260706-1",
+  projectId: "p-260706",
+  batchNo: 1,
+  title: "260706 采购清单 · 第一批",
+  fileName: "260706采购清单(8.14).xls",
+  version: "8.14（v1）",
+  status: "待审核",
+  signoff: { maker: "肖济忠", makerAt: "2026-08-14" },
+  globalNote:
+    "全局要求：与物料接触部位全部 S30408 不锈钢，内壁喷涂 ETFE 0.3mm，禁用 Cu、Zn 材质；磷酸铁锂成品粒径 D50 1.0–1.5μm，分级轮须做动平衡（G2.5）；本批为主机与标准件，第二批（电气元件与自制钣金件）技术部预计 8 月底出，届时合并出合同；待核对行为库存尚未盘点条目，核对完成后再提交批准。",
+  sheets: [
+    {
+      id: "s706-1",
+      name: "二粉主机",
+      rows: buildRows("s706-1", [
+        {
+          name: "分级机主机机壳",
+          spec: "LNC-560-01",
+          material: "304",
+          qty: 2,
+          unit: "套",
+          section: "自制件",
+          techNote: "详见图纸；内壁抛光 Ra≤0.8，焊缝酸洗钝化；整体退火。",
+          hasDrawing: true,
+          st: "m",
+          produceBy: "2026-10-15",
+        },
+        {
+          name: "分级轮总成",
+          spec: "LNC-560-FJL",
+          material: "304+陶瓷",
+          qty: 2,
+          unit: "套",
+          techNote: "陶瓷叶片；动平衡等级 G2.5；库存备件是否可调拨待核对。",
+          st: "w",
+        },
+        {
+          name: "罗茨风机",
+          spec: "FSR-200V",
+          material: "铸铁",
+          qty: 2,
+          unit: "套",
+          brands: "章鼓/陕鼓",
+          techNote: "流量 32m³/min，功率 45KW，P=-50kPa；电机变频、一级能效；进出口配消音器与柔性接头；噪声 ≤85dB(A)。",
+          st: "n",
+        },
+        {
+          name: "高压逆流罗茨风机",
+          spec: "FSR-150V",
+          material: "铸铁",
+          qty: 2,
+          unit: "套",
+          brands: "章鼓/陕鼓",
+          techNote: "流量 20m³/min，P=-60kPa；与 20260510 项目同规格，是否共用库存机组待核对。",
+          st: "w",
+        },
+        {
+          name: "星型卸料阀",
+          spec: "LNXX-300",
+          material: "SUS304",
+          qty: 4,
+          unit: "台",
+          brands: "常州锋杰",
+          techNote: "变频电机 1.5KW，行星减速机；轴端填料密封 ±50KPa 无泄漏；内腔喷涂 ETFE。",
+          st: "n",
+        },
+        {
+          name: "脉冲袋式除尘器",
+          spec: "LNMC-120",
+          material: "304",
+          qty: 2,
+          unit: "台",
+          brands: "成都瑞拓",
+          techNote: "过滤面积 120m²，覆膜滤袋；差压自动清灰；防爆泄压口。库存旧机改造可行性待核对。",
+          st: "w",
+        },
+        {
+          name: "螺旋输送机",
+          spec: "LS-250 · L=6m",
+          material: "304",
+          qty: 3,
+          unit: "台",
+          brands: "新乡振英",
+          techNote: "无轴螺旋，输送量 8t/h；进出料口带快开检修门；轴端气密封。",
+          st: "n",
+        },
+        {
+          name: "主轴轴承",
+          spec: "22320CA/W33",
+          material: "轴承钢",
+          qty: 4,
+          unit: "套",
+          brands: "NSK/SKF",
+          techNote: "库存核对有货，直接分配。",
+          st: "a",
+        },
+        {
+          name: "耐磨衬板",
+          spec: "LNC-560-CB",
+          material: "高铬铸铁",
+          qty: 32,
+          unit: "件",
+          techNote: "硬度 HRC≥58；库存 12 件先行分配，余量需采购。",
+          st: ["p", 12],
+        },
+        {
+          name: "密封件包",
+          spec: "LNC-560-MF",
+          material: "氟橡胶",
+          qty: 1,
+          unit: "批",
+          techNote: "含骨架油封、O 圈与盘根；库存直发。",
+          st: "a",
+        },
+        {
+          name: "变频电机",
+          spec: "YVF2-160L-4 · 15KW",
+          material: "—",
+          qty: 6,
+          unit: "台",
+          brands: "卧龙/西玛",
+          techNote: "一级能效，F 级绝缘，IP55；配独立散热风扇。同型号库存待盘点。",
+          st: "w",
+        },
+        {
+          name: "压缩空气过滤组合",
+          spec: "C-T-A 三级 · 3.0m³/min",
+          material: "铝合金",
+          qty: 2,
+          unit: "套",
+          techNote: "除尘器脉冲阀与气密封用气；含冷干机接口。库存待核对。",
+          st: "w",
+        },
+      ]),
+    },
+    {
+      id: "s706-2",
+      name: "电气资料及要求",
+      infoOnly: true,
+      infoText: `1. 电气元件品牌要求与 20260510 项目一致：低压断路器、接触器采用施耐德/ABB；变频器采用汇川/西门子；PLC 采用西门子 S7-1200 系列及以上。
+2. 所有电机须满足 GB18613-2020 一级能效；30KW 及以上电机配变频启动。
+3. 现场仪表统一 4–20mA 信号，防护等级不低于 IP65；粉尘环境仪表接液部位 304 及以上。
+4. 电气元件清单（含品牌型号、数量）与控制柜图纸由技术部随第二批采购清单一并提供，本批暂不采购。`,
+      rows: [],
+    },
+  ],
+};
 
 // 260227 鄂尔多斯空压机系统：6 行 = 2 全分配 + 4 需采购（3 入 c-kaishan-1、1 未生成）
 const cl260227: Checklist = {
@@ -355,4 +505,4 @@ const cl251102: Checklist = {
   ],
 };
 
-export const extraChecklists: Checklist[] = [cl260227, cl260209, cl251230, cl251102];
+export const extraChecklists: Checklist[] = [cl260706, cl260227, cl260209, cl251230, cl251102];

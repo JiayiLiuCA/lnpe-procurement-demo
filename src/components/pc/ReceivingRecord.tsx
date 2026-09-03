@@ -31,7 +31,7 @@ export function ReceivingRecord({ contract }: { contract: Contract }) {
           <div key={n.id} className="flex flex-col gap-2.5">
             <div className="flex items-center gap-2 text-[13px] font-medium">
               送货单 {fmtDate(n.date)}
-              {n.status === "done" ? <StatusPill tone="success">已提交</StatusPill> : <StatusPill tone="warning">收货中</StatusPill>}
+              {n.status === "done" ? <StatusPill tone="success">已提交</StatusPill> : <StatusPill tone="info">收货中</StatusPill>}
             </div>
             <div className="flex flex-col gap-1.5">
               {lines.map((l) => (

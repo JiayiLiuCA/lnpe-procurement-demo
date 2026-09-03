@@ -33,7 +33,6 @@ export interface Project {
   phase: 1 | 2 | 3 | 4;
   /** 已关闭日期；有值即项目结束，全部信息仍可见 */
   closedAt?: string;
-  stepNote: string;
   keyStat: string;
   tags: string[];
   orderContract: OrderContract;
@@ -51,7 +50,8 @@ export interface Supplier {
   account?: string;
 }
 
-export type AllocStatus = "allocated" | "need" | "partial" | "pending";
+/** allocated 库存已分配 · need 需采购 · partial 部分分配 · pending 待核对 · produce 安排生产（公司自制，不进采购合同） */
+export type AllocStatus = "allocated" | "need" | "partial" | "pending" | "produce";
 
 export interface ChecklistRow {
   id: string;
@@ -65,7 +65,14 @@ export interface ChecklistRow {
   brands?: string;
   techNote: string;
   hasDrawing?: boolean;
-  alloc: { allocated: number; need: number; status: AllocStatus };
+  alloc: {
+    allocated: number;
+    need: number;
+    status: AllocStatus;
+    /** 安排生产：计划完工日期 / 备注（车间、图号） */
+    produceBy?: string;
+    produceNote?: string;
+  };
   contractId?: string;
 }
 
@@ -149,7 +156,6 @@ export interface Contract {
   milestones: Milestone[];
   versions: Version[];
   attachments: string[];
-  expediteLog?: { at: string; note: string }[];
   sellerContactName: string;
   sellerContactPhone: string;
 }
@@ -185,7 +191,7 @@ export interface DeliveryNote {
   lines: DeliveryLine[];
 }
 
-export type TodoKind = "review" | "ai_draft" | "payment_due" | "expedite" | "receive_exception";
+export type TodoKind = "review" | "ai_draft" | "payment_due" | "delivery_overdue" | "receive_exception";
 
 export interface Todo {
   id: string;

@@ -23,8 +23,8 @@ export function matchSupplier(brands: string | undefined, section: string): stri
 
 export const templateClauses = [
   {
-    title: "第 4 条 · 交货与违约金",
-    body: "卖方应于合同约定交货期内将全部货物运抵买方指定地点。逾期交货的，每逾期一日按合同含税总额的 1‰ 向买方支付违约金；逾期超过 30 日的，买方有权解除合同并要求卖方承担由此造成的全部损失。",
+    title: "第 4 条 · 交货",
+    body: "卖方应于合同约定交货期内将全部货物运抵买方指定地点，发货前 3 个工作日书面通知买方到货时间；逾期超过 30 日的，买方有权解除合同并要求卖方承担由此造成的全部损失。",
   },
   {
     title: "第 5 条 · 包装与运输",

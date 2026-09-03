@@ -5,7 +5,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, CircleAlert, Download, UploadCloud } from "lucide-react";
-import type { Checklist } from "@/lib/types";
+import type { Checklist, ChecklistRow } from "@/lib/types";
 import { Btn } from "@/components/ui/Btn";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { TabBar } from "@/components/ui/TabBar";
@@ -18,19 +18,26 @@ import { UploadContractDialog } from "@/components/ai/UploadContractDialog";
 import { useAppStore } from "@/store/useAppStore";
 import { fmtDate } from "@/lib/date";
 import { checklistStats } from "@/lib/derive";
+import { usePartsCatalog } from "@/lib/parts";
+import { fmtNum } from "@/lib/money";
 import { draftSteps, matchSupplier } from "@/fixtures/ai/contract-template";
 import { supplierById } from "@/fixtures/suppliers";
 
-function SignNode({ label, at }: { label: string; at?: string }) {
+/** 签核节点：已签 = 绿勾 + 日期；当前待签 = 青圈；之后的 = 灰圈 */
+function SignNode({ label, at, current }: { label: string; at?: string; current?: boolean }) {
   return (
     <div className="flex flex-col items-center gap-1">
       <div className="flex items-center gap-1.5">
-        <span className="bg-success flex h-4 w-4 items-center justify-center rounded-full">
-          <Check size={9} strokeWidth={3.4} className="text-white" />
-        </span>
-        <span className="text-[12.5px] font-medium">{label}</span>
+        {at ? (
+          <span className="bg-success flex h-4 w-4 items-center justify-center rounded-full">
+            <Check size={9} strokeWidth={3.4} className="text-white" />
+          </span>
+        ) : (
+          <span className={`h-4 w-4 rounded-full border-2 ${current ? "border-info" : "border-line"}`} />
+        )}
+        <span className={`text-[12.5px] font-medium ${at || current ? "" : "text-faint"}`}>{label}</span>
       </div>
-      <span className="text-faint text-[11px]">{at ? fmtDate(at) : "—"}</span>
+      <span className="text-faint text-[11px]">{at ? fmtDate(at) : current ? "待签" : "—"}</span>
     </div>
   );
 }
@@ -41,6 +48,7 @@ export function ChecklistWorkspace({ checklist }: { checklist: Checklist }) {
   const project = useAppStore((s) => s.projects.find((p) => p.id === cl.projectId));
   const markAllocation = useAppStore((s) => s.markAllocation);
   const generateDraftContracts = useAppStore((s) => s.generateDraftContracts);
+  const markProduction = useAppStore((s) => s.markProduction);
   const pushToast = useAppStore((s) => s.pushToast);
 
   const [activeSheet, setActiveSheet] = useState<string>(cl.sheets[0]?.id ?? "s1");
@@ -54,6 +62,17 @@ export function ChecklistWorkspace({ checklist }: { checklist: Checklist }) {
   const sheet = cl.sheets.find((s) => s.id === activeSheet) ?? cl.sheets[0];
   const stats = checklistStats(cl);
   const coverPct = stats.need > 0 ? Math.round((stats.contracted / stats.need) * 100) : 100;
+
+  // AI 预估采购额：需采购行（含部分分配）按预估单价 × 需采购数；自制、已分配、待核对不计
+  const { estimateFor } = usePartsCatalog();
+  const estimateRow = (r: ChecklistRow): number => {
+    if (!(r.alloc.status === "need" || r.alloc.status === "partial") || typeof r.qty !== "number") return 0;
+    const e = estimateFor(r.name, r.spec);
+    return e?.forecast ? e.forecast.predicted * (r.alloc.need || r.qty) : 0;
+  };
+  const clEstimate = allRows.reduce((s, r) => s + estimateRow(r), 0);
+  const uncoveredEstimate = allRows.filter((r) => !r.contractId).reduce((s, r) => s + estimateRow(r), 0);
+  const selEstimate = selectedRows.reduce((s, r) => s + estimateRow(r), 0);
   const tableCardRef = useRef<HTMLDivElement>(null);
 
   const toggle = (rowId: string) => {
@@ -73,10 +92,11 @@ export function ChecklistWorkspace({ checklist }: { checklist: Checklist }) {
     });
   };
 
-  // AI 生成初稿预览：按品牌→供应商映射分组
+  // AI 生成初稿预览：按品牌→供应商映射分组（安排生产的自制行不出合同）
   const groups = (() => {
     const map = new Map<string, typeof selectedRows>();
     for (const r of selectedRows) {
+      if (r.alloc.status === "produce") continue;
       const sid = matchSupplier(r.brands, r.section);
       const g = map.get(sid) ?? [];
       g.push(r);
@@ -102,10 +122,10 @@ export function ChecklistWorkspace({ checklist }: { checklist: Checklist }) {
         <div className="flex-1" />
         <div className="flex shrink-0 items-center">
           <SignNode label={`制表 ${cl.signoff.maker}`} at={cl.signoff.makerAt} />
-          <div className="bg-success mx-2 mb-4 h-0.5 w-9" />
-          <SignNode label="审核" at={cl.signoff.reviewAt} />
-          <div className="bg-success mx-2 mb-4 h-0.5 w-9" />
-          <SignNode label="批准" at={cl.signoff.approveAt} />
+          <div className={`mx-2 mb-4 h-0.5 w-9 ${cl.signoff.reviewAt ? "bg-success" : "bg-line-soft"}`} />
+          <SignNode label="审核" at={cl.signoff.reviewAt} current={!cl.signoff.reviewAt} />
+          <div className={`mx-2 mb-4 h-0.5 w-9 ${cl.signoff.approveAt ? "bg-success" : "bg-line-soft"}`} />
+          <SignNode label="批准" at={cl.signoff.approveAt} current={!!cl.signoff.reviewAt && !cl.signoff.approveAt} />
         </div>
         <div className="flex shrink-0 gap-2 pl-3">
           <a href="/samples/checklist-sample.xls" download={cl.fileName}>
@@ -127,19 +147,28 @@ export function ChecklistWorkspace({ checklist }: { checklist: Checklist }) {
           <div className="flex items-center gap-2.5 text-[13px]">
             <span className="font-bold">合同覆盖</span>
             <span className="text-ink-2">
-              需采购 <span className="text-primary-hover font-bold">{stats.need}</span> · 已入合同{" "}
+              需采购 <span className="text-ink font-bold">{stats.need}</span> · 已入合同{" "}
               <span className="text-info-deep font-bold">{stats.contracted}</span> · 待覆盖{" "}
               <span className="text-warning-deep font-bold">{stats.need - stats.contracted}</span>
             </span>
-            <span className="text-sub text-xs">库存已分配 {stats.allocated} 项</span>
+            <span className="text-sub text-xs">
+              库存已分配 {stats.allocated} 项{stats.produce > 0 && ` · 安排生产 ${stats.produce} 项`}
+              {clEstimate > 0 && (
+                <>
+                  {" "}
+                  · AI 预估采购额 <span className="text-ink font-medium tabular-nums">¥{fmtNum(clEstimate)}</span>
+                  {uncoveredEstimate > 0 && `（未入合同 ¥${fmtNum(uncoveredEstimate)}）`}
+                </>
+              )}
+            </span>
           </div>
           <div className="bg-line-soft mt-2 flex h-2 overflow-hidden rounded">
-            <div className="bg-primary" style={{ width: `${coverPct}%` }} />
+            <div className={coverPct >= 100 ? "bg-success" : "bg-info"} style={{ width: `${coverPct}%` }} />
           </div>
         </div>
         <div className="shrink-0 text-right">
           <div className="text-sub text-xs">覆盖率</div>
-          <div className={`text-[19px] font-bold tabular-nums ${coverPct >= 100 ? "text-success-deep" : "text-primary-hover"}`}>{coverPct}%</div>
+          <div className={`text-[19px] font-bold tabular-nums ${coverPct >= 100 ? "text-success-deep" : "text-info-deep"}`}>{coverPct}%</div>
         </div>
       </div>
 
@@ -152,7 +181,7 @@ export function ChecklistWorkspace({ checklist }: { checklist: Checklist }) {
       )}
 
       {/* sheet Tab + 表格 + 吸底操作栏 */}
-      <div ref={tableCardRef} className="border-line rounded-card flex scroll-mt-4 flex-col overflow-hidden border bg-white">
+      <div ref={tableCardRef} className="border-line rounded-card flex scroll-mt-4 flex-col overflow-clip border bg-white">
         <div className="px-4 pt-1">
           <TabBar
             tabs={cl.sheets.map((s) => ({ key: s.id, label: s.name, badge: s.infoOnly ? undefined : s.rows.length }))}
@@ -164,13 +193,20 @@ export function ChecklistWorkspace({ checklist }: { checklist: Checklist }) {
           <div className="px-5.5 py-4.5 text-[13px] leading-[2] whitespace-pre-line">{sheet.infoText}</div>
         ) : (
           <>
-            <ChecklistTable sheet={sheet} selection={selection} onToggle={toggle} />
+            <ChecklistTable key={sheet.id} sheet={sheet} selection={selection} onToggle={toggle} />
             <div className="sticky bottom-0 z-10">
               <SelectionFooter
                 selectedRows={selectedRows}
+                estimate={selEstimate}
                 onMarkAllocation={(qty) => {
                   markAllocation(cl.id, [...selection], qty);
                   pushToast(`已更新 ${selection.size} 行库存分配`);
+                  setSelection(new Set());
+                }}
+                onArrangeProduction={(plan) => {
+                  const eligible = selectedRows.filter((r) => !r.contractId && (plan ? r.alloc.status !== "produce" : r.alloc.status === "produce")).length;
+                  markProduction(cl.id, [...selection], plan);
+                  pushToast(plan ? `已安排生产 ${eligible} 行 · 计划完工 ${plan.produceBy}` : `已撤销 ${eligible} 行生产安排，改回需采购`);
                   setSelection(new Set());
                 }}
                 onGenerate={() => setGenOpen(true)}
@@ -211,12 +247,12 @@ export function ChecklistWorkspace({ checklist }: { checklist: Checklist }) {
                     ))}
                   </div>
                   <div className="text-sub border-line-soft border-t pt-2 text-xs">
-                    模板条款：交货期按项目要求 · 违约金 1‰/日 · 付款 10-50-30-10 · 13% 增值税专票
+                    模板条款：交货期按项目要求 · 付款 10-50-30-10 · 13% 增值税专票
                   </div>
                 </div>
               );
             })}
-            {groups.length === 0 && <div className="text-faint py-6 text-center text-[13px]">未选择任何清单行</div>}
+            {groups.length === 0 && <div className="text-faint py-6 text-center text-[13px]">未选择可采购的清单行（安排生产的自制件不出合同）</div>}
           </div>
         )}
         confirmLabel="生成草稿合同"
@@ -229,7 +265,7 @@ export function ChecklistWorkspace({ checklist }: { checklist: Checklist }) {
             router.push(`/contracts/${ids[0]}`);
           }
         }}
-        disabled={() => selectedRows.length === 0}
+        disabled={() => groups.length === 0}
       />
       <ChecklistParseDialog open={uploadClOpen} onClose={() => setUploadClOpen(false)} />
       <UploadContractDialog

@@ -1,16 +1,16 @@
 "use client";
 
-// 项目列表 + AI 流程 1：新建项目（上传订单合同）
+// 项目列表 + AI 流程 1：新建项目（上传订单合同）+ 导入已有项目入口（仅演示）
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { UploadCloud } from "lucide-react";
+import { FolderInput, UploadCloud } from "lucide-react";
 import { Topbar, Crumb } from "@/components/shell/Topbar";
 import { Btn } from "@/components/ui/Btn";
 import { PhaseChips } from "@/components/ui/PhaseProgress";
 import { Money } from "@/components/ui/Money";
 import { MilestoneBar } from "@/components/ui/MilestoneBar";
-import { CountdownChip } from "@/components/ui/CountdownChip";
 import { AiSimDialog } from "@/components/ai/AiSimDialog";
+import { ImportProjectDialog } from "@/components/pc/ImportProjectDialog";
 import { useAppStore } from "@/store/useAppStore";
 import { orderParse } from "@/fixtures/ai/order-parse";
 import { fmtNum } from "@/lib/money";
@@ -75,8 +75,8 @@ function OrderParseResult() {
           不含税 <Money value={orderParse.amountExclTax} />
         </div>
       </div>
-      <div className="bg-primary-soft flex flex-col gap-2 rounded-[10px] px-4 py-3">
-        <div className="text-[12.5px] font-medium text-[#A34A00]">{orderParse.paymentTerms}</div>
+      <div className="bg-info-bg flex flex-col gap-2 rounded-[10px] px-4 py-3">
+        <div className="text-info-deep text-[12.5px] font-medium">{orderParse.paymentTerms}</div>
         <MilestoneBar
           milestones={[
             { key: "M1", ratio: 0.1, label: "预付款", condition: "", status: "not_started" },
@@ -98,6 +98,7 @@ export default function ProjectsPage() {
   const upsertOrderParse = useAppStore((s) => s.upsertOrderParse);
   const pushToast = useAppStore((s) => s.pushToast);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
 
   const openProjects = projects.filter((p) => !p.closedAt);
@@ -109,10 +110,16 @@ export default function ProjectsPage() {
       <Topbar
         crumbs={<Crumb>项目管理</Crumb>}
         actions={
-          <Btn variant="primary" onClick={() => setDialogOpen(true)}>
-            <UploadCloud size={14} strokeWidth={1.8} />
-            新建项目（上传订单合同）
-          </Btn>
+          <div className="flex items-center gap-2">
+            <Btn variant="secondary" onClick={() => setImportOpen(true)}>
+              <FolderInput size={14} strokeWidth={1.8} />
+              导入已有项目
+            </Btn>
+            <Btn variant="primary" onClick={() => setDialogOpen(true)}>
+              <UploadCloud size={14} strokeWidth={1.8} />
+              新建项目（上传订单合同）
+            </Btn>
+          </div>
         }
       />
       <div className="flex flex-1 flex-col gap-3.5 p-6">
@@ -129,7 +136,7 @@ export default function ProjectsPage() {
               type="button"
               onClick={() => setFilter(k)}
               className={`cursor-pointer rounded-full px-3 py-1.25 text-[12.5px] font-medium ${
-                filter === k ? "bg-primary text-white" : "border-line text-ink-2 border bg-white"
+                filter === k ? "bg-ink text-white" : "border-line text-ink-2 border bg-white"
               }`}
             >
               {label}
@@ -139,9 +146,8 @@ export default function ProjectsPage() {
         <div className="border-line rounded-card flex flex-col overflow-hidden border bg-white">
           <div className="text-sub border-line-soft flex border-b bg-[#FBFAF9] px-4.5 py-2 text-xs font-medium">
             <div className="w-[80px]">项目号</div>
-            <div className="w-[180px]">项目名称</div>
+            <div className="w-[210px]">项目名称</div>
             <div className="w-[90px]">立项时间</div>
-            <div className="w-[100px]">项目截止</div>
             <div className="flex-1">阶段</div>
             <div className="w-[180px]">关键数字</div>
             <div className="w-[64px]">负责人</div>
@@ -156,9 +162,8 @@ export default function ProjectsPage() {
               } ${p.closedAt ? "opacity-75" : ""}`}
             >
               <div className="w-[80px] font-bold tabular-nums">{p.code}</div>
-              <div className="w-[180px] pr-2">{p.name}</div>
+              <div className="w-[210px] pr-2">{p.name}</div>
               <div className="text-ink-2 w-[90px] tabular-nums">{p.orderedAt.slice(2)}</div>
-              <div className="w-[100px]">{p.closedAt ? <span className="text-sub tabular-nums">{p.deliveryDeadline.slice(2)}</span> : <CountdownChip dueAt={p.deliveryDeadline} />}</div>
               <div className="flex-1 pr-2">
                 <PhaseChips project={p} />
               </div>
@@ -170,6 +175,7 @@ export default function ProjectsPage() {
         </div>
       </div>
 
+      <ImportProjectDialog open={importOpen} onClose={() => setImportOpen(false)} />
       <AiSimDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}

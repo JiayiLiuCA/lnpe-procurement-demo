@@ -31,10 +31,10 @@ export default function MobileTasksPage() {
       type="button"
       onClick={() => setFilter(key)}
       className={`flex-1 cursor-pointer rounded-lg py-2 text-center text-[13.5px] ${
-        filter === key ? "text-primary-hover bg-white font-bold shadow-[0_1px_3px_rgba(44,42,42,.08)]" : "text-ink-2"
+        filter === key ? "text-ink bg-white font-bold shadow-[0_1px_3px_rgba(44,42,42,.08)]" : "text-ink-2"
       }`}
     >
-      {label} <span className={filter === key ? "text-primary" : ""}>{count}</span>
+      {label} <span className="text-sub font-normal">{count}</span>
     </button>
   );
 
@@ -103,7 +103,7 @@ export default function MobileTasksPage() {
               <div className="text-[13px] font-bold">送货单 · {deliveryScan.date}</div>
               <div className="flex flex-wrap gap-1.5">
                 {deliveryScan.projectCodes.map((p) => (
-                  <span key={p} className="bg-primary-soft rounded-md px-2 py-0.5 text-[11.5px] font-medium text-[#A34A00]">
+                  <span key={p} className="bg-line-soft text-ink-2 rounded-md px-2 py-0.5 text-[11.5px] font-medium">
                     项目 {p}
                   </span>
                 ))}

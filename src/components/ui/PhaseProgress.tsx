@@ -5,15 +5,21 @@ import { Check } from "lucide-react";
 import type { Project } from "@/lib/types";
 import { StatusPill } from "./StatusPill";
 import { fmtDate } from "@/lib/date";
+import { phaseSummary } from "@/lib/derive";
+import { useAppStore } from "@/store/useAppStore";
 
 export const PHASE_LABELS = ["订单接收", "采购清单", "合同执行", "订单关闭"] as const;
 
 /**
- * 表格行用的阶段标签条：已完成 = 橙底白勾 + 标签，当前 = 白底橙描边加粗，未开始 = 灰。
+ * 表格行用的阶段标签条：已完成 = 浅绿底深绿字带勾，当前 = 白底青描边加粗（交货逾期则红描边），未开始 = 灰。
+ * 末尾小字只概括当前阶段走到哪一步（由合同/清单/送货单派生），不带逾期等明细；
  * 已关闭项目全部打勾并追加「已结束」。
  */
 export function PhaseChips({ project }: { project: Project }) {
-  const danger = !project.closedAt && project.tags.includes("催发货");
+  const contracts = useAppStore((s) => s.contracts);
+  const checklists = useAppStore((s) => s.checklists);
+  const notes = useAppStore((s) => s.deliveryNotes);
+  const danger = !project.closedAt && project.tags.some((t) => t.includes("逾期"));
   const closed = !!project.closedAt;
   return (
     <div className="flex flex-wrap items-center gap-1.5">
@@ -23,7 +29,7 @@ export function PhaseChips({ project }: { project: Project }) {
         const current = !closed && n === project.phase;
         if (done) {
           return (
-            <span key={n} className="bg-primary inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11.5px] font-medium text-white">
+            <span key={n} className="bg-success-bg text-success-deep inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11.5px] font-medium">
               <Check size={10} strokeWidth={3.2} />
               {label}
             </span>
@@ -34,7 +40,7 @@ export function PhaseChips({ project }: { project: Project }) {
             <span
               key={n}
               className={`inline-flex items-center rounded-full border-[1.5px] bg-white px-2 py-0.5 text-[11.5px] font-bold ${
-                danger ? "border-danger text-danger-deep" : "border-primary text-primary-hover"
+                danger ? "border-danger text-danger-deep" : "border-info text-info-deep"
               }`}
             >
               {label}
@@ -49,10 +55,8 @@ export function PhaseChips({ project }: { project: Project }) {
       })}
       {closed ? (
         <StatusPill tone="neutral">已结束 {fmtDate(project.closedAt)}</StatusPill>
-      ) : danger ? (
-        <StatusPill tone="danger">{project.stepNote}</StatusPill>
       ) : (
-        <span className="text-primary-hover text-xs font-medium">{project.stepNote}</span>
+        <span className="text-ink-2 text-xs">{phaseSummary(project, contracts, checklists, notes)}</span>
       )}
     </div>
   );
@@ -71,7 +75,7 @@ export function PhaseStepper({
   viewPhase: number;
   onSelect: (phase: number) => void;
 }) {
-  const danger = !project.closedAt && project.tags.includes("催发货");
+  const danger = !project.closedAt && project.tags.some((t) => t.includes("逾期"));
   const closed = !!project.closedAt;
   return (
     <div className="flex items-start">
@@ -84,23 +88,23 @@ export function PhaseStepper({
           <span key={n} className="contents">
             <button type="button" onClick={() => onSelect(n)} className="flex w-[86px] cursor-pointer flex-col items-center gap-1.5">
               {done ? (
-                <span className="bg-primary flex h-[18px] w-[18px] items-center justify-center rounded-full">
+                <span className="bg-success flex h-[18px] w-[18px] items-center justify-center rounded-full">
                   <Check size={10} strokeWidth={3.4} className="text-white" />
                 </span>
               ) : current ? (
-                <span className={`h-[18px] w-[18px] rounded-full border-[3px] bg-white ${danger ? "border-danger" : "border-primary"}`} />
+                <span className={`h-[18px] w-[18px] rounded-full border-[3px] bg-white ${danger ? "border-danger" : "border-info"}`} />
               ) : (
                 <span className="bg-line h-[18px] w-[18px] rounded-full" />
               )}
               <span
-                className={`rounded-full px-2 py-0.5 text-xs ${selected ? "bg-primary-soft font-bold" : ""} ${
-                  current ? (danger ? "text-danger-deep font-bold" : "text-primary-hover font-bold") : done ? "text-ink-2" : "text-faint"
+                className={`rounded-full px-2 py-0.5 text-xs ${selected ? "bg-line-soft font-bold" : ""} ${
+                  current ? (danger ? "text-danger-deep font-bold" : "text-info-deep font-bold") : done ? "text-ink-2" : "text-faint"
                 }`}
               >
                 {label}
               </span>
             </button>
-            {n < PHASE_LABELS.length && <span className={`mt-2 h-[2px] flex-1 ${done ? "bg-primary" : "bg-line"}`} />}
+            {n < PHASE_LABELS.length && <span className={`mt-2 h-[2px] flex-1 ${done ? "bg-success" : "bg-line"}`} />}
           </span>
         );
       })}

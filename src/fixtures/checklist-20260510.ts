@@ -1,7 +1,7 @@
 import type { Checklist, ChecklistRow, Sheet } from "@/lib/types";
 
-// 行状态恒等式：8 全分配 + 61 全需采购 + 1 部分分配 + 1 待核对 = 71
-// 派生结果：已分配 9 项 / 需采购 62 项 / 已入合同 54 项
+// 行状态恒等式：8 全分配 + 59 全需采购 + 2 安排生产 + 1 部分分配 + 1 待核对 = 71
+// 派生结果：已分配 9 项 / 需采购 60 项 / 安排生产 2 项 / 已入合同 54 项
 
 export type RowSpec = {
   name: string;
@@ -13,8 +13,10 @@ export type RowSpec = {
   brands?: string;
   techNote?: string;
   hasDrawing?: boolean;
-  /** 'a' 全分配 · 'n' 全需采购 · ['p', allocated] 部分 · 'w' 待核对 */
-  st: "a" | "n" | "w" | ["p", number];
+  /** 'a' 全分配 · 'n' 全需采购 · ['p', allocated] 部分 · 'w' 待核对 · 'm' 安排生产（公司自制） */
+  st: "a" | "n" | "w" | "m" | ["p", number];
+  /** 'm' 时的计划完工日期 */
+  produceBy?: string;
   contractId?: string;
 };
 
@@ -28,7 +30,9 @@ export function buildRows(sheetId: string, specs: RowSpec[]): ChecklistRow[] {
           ? { allocated: 0, need: qtyNum, status: "need" as const }
           : s.st === "w"
             ? { allocated: 0, need: 0, status: "pending" as const }
-            : { allocated: s.st[1], need: qtyNum - s.st[1], status: "partial" as const };
+            : s.st === "m"
+              ? { allocated: 0, need: 0, status: "produce" as const, produceBy: s.produceBy }
+              : { allocated: s.st[1], need: qtyNum - s.st[1], status: "partial" as const };
     return {
       id: `r-${sheetId}-${i + 1}`,
       seq: i + 1,
@@ -208,7 +212,8 @@ const sheet3: Sheet = {
       section: "自制件",
       techNote: "详见图纸；外表面喷砂，内表面喷涂 ETFE 0.3mm；锥角 60°，配仓壁振动器安装座。",
       hasDrawing: true,
-      st: "n",
+      st: "m",
+      produceBy: "2026-09-05",
     },
     {
       name: "旋风分离器",
@@ -271,7 +276,7 @@ const sheet4: Sheet = {
       st: "w",
     },
     { name: "溜管及弯头组件", spec: "φ219×3", material: "304 内衬陶瓷", qty: 18, unit: "件", section: "自制件", techNote: "详见图纸；弯头 R≥1.5D，内衬 92 陶瓷贴片。", hasDrawing: true, st: "n", contractId: "c-draft-1" },
-    { name: "检修平台及爬梯", spec: "LNPT-2", material: "Q235B 热镀锌", qty: 2, unit: "套", section: "自制件", techNote: "详见图纸；载荷 2kN/m²；栏杆高 1.05m。", hasDrawing: true, st: "n" },
+    { name: "检修平台及爬梯", spec: "LNPT-2", material: "Q235B 热镀锌", qty: 2, unit: "套", section: "自制件", techNote: "详见图纸；载荷 2kN/m²；栏杆高 1.05m。", hasDrawing: true, st: "m", produceBy: "2026-09-20" },
     { name: "风管法兰", spec: "DN300", material: "304", qty: 40, unit: "片", section: "自制件", techNote: "按 NB/T 47023 制作；密封面车削。", st: "n", contractId: "c-fengjie" },
     { name: "布袋除尘器支架", spec: "LNZJ-128", material: "Q235B 喷塑", qty: 2, unit: "套", section: "自制件", techNote: "地脚螺栓预埋件随货。", st: "n", contractId: "c-draft-2" },
     { name: "吨袋投料站", spec: "LNTL-1000", material: "304", qty: 2, unit: "套", section: "自制件", techNote: "详见图纸；配电动葫芦吊架、破拱按摩装置、除尘接口。", hasDrawing: true, st: "n", contractId: "c-draft-1" },

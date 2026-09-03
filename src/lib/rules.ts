@@ -7,11 +7,6 @@ export function milestoneAmount(total: number, ratio: number): number {
   return Math.round(total * ratio);
 }
 
-/** 违约金 = 总额 × 1‰ × 逾期天数 */
-export function penalty(total: number, days: number): number {
-  return Math.round(total * 0.001 * days);
-}
-
 export type DueTone = "danger" | "warning" | "neutral";
 
 export function dueTone(dueAt: string): DueTone {

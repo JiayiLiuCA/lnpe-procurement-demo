@@ -57,7 +57,6 @@ export const contracts: Contract[] = [
       v("v3", "v3 定稿（双方盖章版）", "2026-03-11", "赵小燕 上传", { final: true }),
     ],
     attachments: ["技术协议（签章版）.pdf", "发票 NO.04482913.pdf", "发票 NO.04517206.pdf"],
-    expediteLog: [{ at: "2026-08-18", note: "已短信通知卖方经办 唐毅" }],
     sellerContactName: "唐毅",
     sellerContactPhone: "13677626727",
   },

@@ -91,7 +91,7 @@ export function MReceiveLineCard({
 
   if (isCurrent) {
     return (
-      <div className="border-primary flex flex-col gap-3 rounded-xl border-2 bg-white p-3.5">
+      <div className="border-info flex flex-col gap-3 rounded-xl border-2 bg-white p-3.5">
         <div className="flex items-start gap-2.5">
           <div className="flex-1">
             <div className="text-[15px] font-bold">
@@ -99,7 +99,7 @@ export function MReceiveLineCard({
             </div>
             <LineMeta l={l} tail={contractNoTail} />
           </div>
-          <span className="bg-primary-soft shrink-0 rounded-full px-2.5 py-0.75 text-xs font-medium text-[#A34A00]">待确认</span>
+          <span className="bg-warning-bg text-warning-deep shrink-0 rounded-full px-2.5 py-0.75 text-xs font-medium">待确认</span>
         </div>
         <MPhotoRow count={l.photoCount} size={64} onAdd={onAddPhoto} />
         <div className="flex gap-2.5">
@@ -132,7 +132,7 @@ export function MReceiveLineCard({
         </div>
         <LineMeta l={l} tail={contractNoTail} />
       </div>
-      <span className="bg-primary-soft shrink-0 rounded-full px-2.5 py-0.75 text-xs font-medium text-[#A34A00]">待确认</span>
+      <span className="bg-warning-bg text-warning-deep shrink-0 rounded-full px-2.5 py-0.75 text-xs font-medium">待确认</span>
     </div>
   );
 }

@@ -48,7 +48,7 @@ export default function ContractsPage() {
               type="button"
               onClick={() => setStatusFilter(f)}
               className={`cursor-pointer rounded-full px-3 py-1.25 text-[12.5px] font-medium ${
-                statusFilter === f ? "bg-primary text-white" : "border-line text-ink-2 border bg-white"
+                statusFilter === f ? "bg-ink text-white" : "border-line text-ink-2 border bg-white"
               }`}
             >
               {f === "all" ? "全部" : CONTRACT_STATUS_LABEL[f]}

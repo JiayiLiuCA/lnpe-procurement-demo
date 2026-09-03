@@ -60,13 +60,13 @@ export default function MobileReceivingPage() {
           </div>
         </div>
         <div className="flex-1" />
-        <div className="text-primary-hover text-[13px] font-bold tabular-nums">
+        <div className="text-info-deep text-[13px] font-bold tabular-nums">
           {processed.length}/{note.lines.length}
         </div>
       </div>
       <div className="shrink-0 bg-white px-4 pb-3">
         <div className="bg-line-soft h-1.5 overflow-hidden rounded-[3px]">
-          <div className="bg-primary h-full transition-all" style={{ width: `${progress}%` }} />
+          <div className={`${allDone ? "bg-success" : "bg-info"} h-full transition-all`} style={{ width: `${progress}%` }} />
         </div>
       </div>
 
@@ -75,7 +75,7 @@ export default function MobileReceivingPage() {
         <div className="flex flex-col gap-2 rounded-xl bg-white px-3.5 py-3">
           <div className="flex flex-wrap gap-1.5">
             {note.projectIds.map((p) => (
-              <span key={p} className="bg-primary-soft rounded-md px-2 py-0.5 text-[11.5px] font-medium text-[#A34A00]">
+              <span key={p} className="bg-line-soft text-ink-2 rounded-md px-2 py-0.5 text-[11.5px] font-medium">
                 项目 {p.replace("p-", "")}
               </span>
             ))}
@@ -155,7 +155,7 @@ export default function MobileReceivingPage() {
           <div className="text-ink-2 text-xs">
             已确认 <span className="text-success-deep font-bold">{confirmed.length}</span> · 异常{" "}
             <span className="text-danger-deep font-bold">{excs.length}</span> · 待确认{" "}
-            <span className="text-primary-hover font-bold">{unconfirmed.length}</span>
+            <span className="text-warning-deep font-bold">{unconfirmed.length}</span>
           </div>
           <div className="text-faint text-[11px]">弱网环境已自动暂存</div>
         </div>

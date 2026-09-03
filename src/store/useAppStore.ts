@@ -1,7 +1,7 @@
 "use client";
 
 // 单一全局 store：种子数据 + 全部动作 + toast。
-// 派生 vs 写死的统一原则：凡能由种子数据推导的（倒计时、违约金、付款计划、
+// 派生 vs 写死的统一原则：凡能由种子数据推导的（倒计时、付款计划、
 // 清单各 Tab 计数、送货单"x 类 y 件"、里程碑金额）一律派生；
 // 仅工作台 4 张 KPI 卡取自 fixtures/kpis.ts 常量（全量口径，demo 只建模 9 份合同）。
 import { create } from "zustand";
@@ -43,6 +43,8 @@ interface AppState {
   todos: Todo[];
   activities: Activity[];
   draftCounter: number;
+  /** AI 采购成本预测的基准日期；null = 尚未预测（清单/库存页只显示「未预测」） */
+  costForecastAt: string | null;
   toasts: Toast[];
   toastCounter: number;
 
@@ -50,6 +52,12 @@ interface AppState {
   removeToast: (id: number) => void;
 
   markAllocation: (checklistId: string, rowIds: string[], allocatedQty: number) => void;
+  /** 安排生产（公司自制）：plan 为 null 时撤销，改回需采购；已入合同的行跳过 */
+  markProduction: (checklistId: string, rowIds: string[], plan: { produceBy: string; note?: string } | null) => void;
+  /** AI 流程 6：采购成本预测——预测本身由 lib/parts 按物料指数派生，这里只记基准日 */
+  runCostForecast: () => void;
+  /** 提醒中心：把待办标记为已办（工作台与侧栏角标随之减少） */
+  markTodoDone: (id: string) => void;
   generateDraftContracts: (checklistId: string, rowIds: string[]) => string[];
   /** 人工上传已签合同 xlsx → 勾选 cover 的采购行 → 建合同并更新 coverage */
   uploadContractCover: (checklistId: string, rowIds: string[]) => string | null;
@@ -60,7 +68,6 @@ interface AppState {
   applyFinalizeDiff: (contractId: string) => void;
   registerInvoice: (contractId: string, mKey: MilestoneKey, invoice: Invoice) => void;
   markMilestonePaid: (contractId: string, mKey: MilestoneKey) => void;
-  expedite: (contractId: string) => void;
   upsertOrderParse: () => void;
   upsertChecklistParse: () => void;
   confirmDeliveryLine: (noteId: string, seq: number) => void;
@@ -86,6 +93,7 @@ export const useAppStore = create<AppState>()(
       todos: seedTodos,
       activities: seedActivities,
       draftCounter: 3,
+      costForecastAt: "2026-08-18",
       toasts: [],
       toastCounter: 1,
 
@@ -122,11 +130,36 @@ export const useAppStore = create<AppState>()(
           }),
         })),
 
+      markProduction: (checklistId, rowIds, plan) =>
+        set((s) => ({
+          checklists: s.checklists.map((cl) => {
+            if (cl.id !== checklistId) return cl;
+            return {
+              ...cl,
+              sheets: cl.sheets.map((sh) => ({
+                ...sh,
+                rows: sh.rows.map((r) => {
+                  if (!rowIds.includes(r.id) || r.contractId) return r;
+                  if (plan === null) {
+                    if (r.alloc.status !== "produce") return r;
+                    const qtyNum = typeof r.qty === "number" ? r.qty : 0;
+                    return { ...r, alloc: { allocated: 0, need: qtyNum, status: "need" as const } };
+                  }
+                  return {
+                    ...r,
+                    alloc: { allocated: 0, need: 0, status: "produce" as const, produceBy: plan.produceBy, produceNote: plan.note || undefined },
+                  };
+                }),
+              })),
+            };
+          }),
+        })),
+
       generateDraftContracts: (checklistId, rowIds) => {
         const s = get();
         const cl = s.checklists.find((c) => c.id === checklistId);
         if (!cl) return [];
-        const rows = cl.sheets.flatMap((sh) => sh.rows).filter((r) => rowIds.includes(r.id));
+        const rows = cl.sheets.flatMap((sh) => sh.rows).filter((r) => rowIds.includes(r.id) && r.alloc.status !== "produce");
         const groups = new Map<string, typeof rows>();
         for (const r of rows) {
           const sid = matchSupplier(r.brands, r.section);
@@ -196,7 +229,8 @@ export const useAppStore = create<AppState>()(
         const s = get();
         const cl = s.checklists.find((c) => c.id === checklistId);
         if (!cl || rowIds.length === 0) return null;
-        const rows = cl.sheets.flatMap((sh) => sh.rows).filter((r) => rowIds.includes(r.id));
+        const rows = cl.sheets.flatMap((sh) => sh.rows).filter((r) => rowIds.includes(r.id) && r.alloc.status !== "produce");
+        if (rows.length === 0) return null;
         const counter = s.draftCounter;
         const id = `c-up-${counter}`;
         const no = `LNPE-20260820${String(counter).padStart(3, "0")}-SJ`;
@@ -258,7 +292,7 @@ export const useAppStore = create<AppState>()(
           projects: s.projects.map((x) =>
             x.id !== projectId
               ? x
-              : { ...x, phase: 4 as const, closedAt: TODAY, stepNote: "已关闭", tags: ["已结束"] },
+              : { ...x, phase: 4 as const, closedAt: TODAY, tags: ["已结束"] },
           ),
           activities: [
             {
@@ -345,31 +379,6 @@ export const useAppStore = create<AppState>()(
           ),
         })),
 
-      expedite: (contractId) => {
-        const c = get().contracts.find((x) => x.id === contractId);
-        if (!c) return;
-        const sup = supplierById(c.supplierId);
-        set((s) => ({
-          contracts: s.contracts.map((x) =>
-            x.id !== contractId
-              ? x
-              : { ...x, expediteLog: [...(x.expediteLog ?? []), { at: TODAY, note: `已短信通知卖方经办 ${x.sellerContactName}` }] },
-          ),
-          activities: [
-            {
-              id: `a-x-${s.activities.length + 1}`,
-              projectId: c.projectId,
-              text: `已向 ${sup.short} 发送催发货短信（${c.sellerContactName}）`,
-              at: `${fmtDate(TODAY)} · 刚刚`,
-              actor: "赵小燕",
-              tone: "danger" as const,
-            },
-            ...s.activities,
-          ],
-        }));
-        get().pushToast(`催发货短信已发送 ${c.sellerContactName}（${sup.short}）`);
-      },
-
       // AI 流程 1：幂等 upsert 项目 260227 与 c-kaishan-1（覆盖写回种子值，可重复演示）
       upsertOrderParse: () =>
         set((s) => {
@@ -434,7 +443,7 @@ export const useAppStore = create<AppState>()(
           ),
         })),
 
-      // 提交收货：note→done；关联合同 arrived + 到货日 + M3/M4 期限填充；项目 stepNote；动态与待办；toast
+      // 提交收货：note→done；关联合同 arrived + 到货日 + M3/M4 期限填充；动态与待办；toast
       submitReceiving: (noteId) => {
         const s = get();
         const note = s.deliveryNotes.find((n) => n.id === noteId);
@@ -476,17 +485,16 @@ export const useAppStore = create<AppState>()(
                   }
                 : c,
             ),
-            projects: st.projects.map((p) =>
-              noteId === "d-0609" && p.id === "p-260209"
-                ? { ...p, stepNote: `已收货${excLines.length ? ` · 异常 ${excLines.length} 项` : ""}` }
-                : p,
-            ),
             activities: [...newActivities, ...st.activities],
             todos: [...st.todos, ...newTodos],
           };
         });
         get().pushToast("已提交，已同步 PC 端合同跟进");
       },
+
+      runCostForecast: () => set({ costForecastAt: TODAY }),
+
+      markTodoDone: (id) => set((s) => ({ todos: s.todos.map((t) => (t.id === id ? { ...t, done: true } : t)) })),
 
       resetDemo: () => {
         try {
@@ -502,7 +510,7 @@ export const useAppStore = create<AppState>()(
       name: "lnpe-demo-v2",
       // 数据结构/种子内容变更时递增：版本不匹配的旧 localStorage 会被直接丢弃（回到种子数据），
       // 避免旧结构（如缺 keyTerms 的 orderContract）rehydrate 后覆盖新种子导致运行时崩溃
-      version: 4,
+      version: 9,
       storage: createJSONStorage(() => localStorage),
       skipHydration: true,
       partialize: (s) =>
@@ -514,6 +522,7 @@ export const useAppStore = create<AppState>()(
           todos: s.todos,
           activities: s.activities,
           draftCounter: s.draftCounter,
+          costForecastAt: s.costForecastAt,
         }) as AppState,
     },
   ),

@@ -9,7 +9,7 @@ const KIND_TONE: Record<TodoKind, PillTone> = {
   review: "warning",
   ai_draft: "ai",
   payment_due: "warning",
-  expedite: "danger",
+  delivery_overdue: "danger",
   receive_exception: "danger",
 };
 
@@ -24,12 +24,7 @@ export function TodoList({ todos }: { todos: Todo[] }) {
             <div className="truncate text-[13.5px] font-medium">{t.title}</div>
             <div className="text-sub text-xs">{t.sub}</div>
           </div>
-          <Btn
-            variant={t.kind === "expedite" ? "danger" : "secondary"}
-            size="sm"
-            className="shrink-0"
-            onClick={() => router.push(t.href)}
-          >
+          <Btn variant="secondary" size="sm" className="shrink-0" onClick={() => router.push(t.href)}>
             {t.actionLabel}
           </Btn>
         </div>

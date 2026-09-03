@@ -20,7 +20,7 @@ export function MTaskCard({ note, onStart, onContinue }: { note: DeliveryNote; o
   return (
     <div
       className={`flex flex-col gap-3 rounded-[14px] bg-white p-4 shadow-[0_1px_3px_rgba(44,42,42,.05)] ${
-        inProgress ? "border-[1.5px] border-[#F2A360]" : ""
+        inProgress ? "border-[1.5px] border-info" : ""
       }`}
     >
       <div className="flex items-center gap-2">
@@ -30,7 +30,7 @@ export function MTaskCard({ note, onStart, onContinue }: { note: DeliveryNote; o
         ) : excCount > 0 ? (
           <StatusPill tone="danger">异常 {excCount} 项</StatusPill>
         ) : isToday ? (
-          <StatusPill tone="primarySoft">今日到货</StatusPill>
+          <StatusPill tone="info">今日到货</StatusPill>
         ) : note.date > TODAY ? (
           <StatusPill tone="neutral">明日预计</StatusPill>
         ) : null}
@@ -55,10 +55,10 @@ export function MTaskCard({ note, onStart, onContinue }: { note: DeliveryNote; o
         <div className="flex flex-col gap-1.5">
           <div className="text-sub flex justify-between text-xs">
             <span>已处理 {processed}/{note.lines.length} 项</span>
-            <span className="text-primary-hover font-medium">{progress}%</span>
+            <span className="text-info-deep font-medium">{progress}%</span>
           </div>
           <div className="bg-line-soft h-1.5 overflow-hidden rounded-[3px]">
-            <div className="bg-primary h-full" style={{ width: `${progress}%` }} />
+            <div className={`${progress >= 100 ? "bg-success" : "bg-info"} h-full`} style={{ width: `${progress}%` }} />
           </div>
         </div>
       )}
@@ -67,7 +67,7 @@ export function MTaskCard({ note, onStart, onContinue }: { note: DeliveryNote; o
           <button
             type="button"
             onClick={onContinue}
-            className="border-primary text-primary-hover flex h-[46px] cursor-pointer items-center justify-center rounded-[10px] border-[1.5px] text-[15px] font-bold"
+            className="border-[#CFCCCA] text-ink flex h-[46px] cursor-pointer items-center justify-center rounded-[10px] border-[1.5px] bg-white text-[15px] font-bold"
           >
             继续收货
           </button>
@@ -75,7 +75,7 @@ export function MTaskCard({ note, onStart, onContinue }: { note: DeliveryNote; o
           <button
             type="button"
             onClick={onStart}
-            className="bg-primary flex h-[46px] cursor-pointer items-center justify-center gap-2 rounded-[10px] text-[15px] font-bold text-white"
+            className="border-[#CFCCCA] text-ink flex h-[46px] cursor-pointer items-center justify-center gap-2 rounded-[10px] border-[1.5px] bg-white text-[15px] font-bold"
           >
             <Camera size={17} strokeWidth={1.8} />
             开始收货

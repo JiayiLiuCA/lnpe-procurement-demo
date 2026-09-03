@@ -17,7 +17,7 @@ export function MilestoneBar({
         {milestones.map((m) => (
           <div
             key={m.key}
-            className={`rounded-[3px] ${m.status === "paid" ? "bg-primary" : "bg-line"}`}
+            className={`rounded-[3px] ${m.status === "paid" ? "bg-success" : "bg-line"}`}
             style={{ width: `${m.ratio * 100}%` }}
           />
         ))}

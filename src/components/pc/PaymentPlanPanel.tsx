@@ -2,21 +2,21 @@
 
 import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
-import { paymentPlan } from "@/lib/derive";
-import { dueTone, penalty } from "@/lib/rules";
+import { overdueContracts, paymentPlan } from "@/lib/derive";
+import { dueTone } from "@/lib/rules";
 import { fmtDate, overdueDays } from "@/lib/date";
 import { Money } from "@/components/ui/Money";
 import { useAppStore } from "@/store/useAppStore";
 import { projects as allProjects } from "@/fixtures/projects";
+import { supplierById } from "@/fixtures/suppliers";
 
 export function PaymentPlanPanel() {
   const contracts = useAppStore((s) => s.contracts);
+  const deliveryNotes = useAppStore((s) => s.deliveryNotes);
   const rows = paymentPlan(contracts);
 
-  // 开山逾期违约金（派生：7,392,000 × 82 × 1‰ = 606,144）
-  const kaishan = contracts.find((c) => c.id === "c-kaishan-1");
-  const kaishanOverdue = kaishan?.deliveryDate ? overdueDays(kaishan.deliveryDate) : 0;
-  const kaishanPenalty = kaishan?.amountInclTax ? penalty(kaishan.amountInclTax, kaishanOverdue) : 0;
+  // 交货逾期提醒（只提示，不做催办动作）
+  const overdue = overdueContracts(contracts, deliveryNotes);
 
   return (
     <div className="border-line rounded-card flex flex-1 flex-col overflow-hidden border bg-white">
@@ -56,13 +56,16 @@ export function PaymentPlanPanel() {
           );
         })}
       </div>
-      {kaishan && kaishanOverdue > 0 && (
-        <div className="bg-danger-bg mt-auto flex items-center gap-2.5 px-4.5 py-3">
-          <AlertTriangle size={17} strokeWidth={1.8} className="text-danger-deep shrink-0" />
-          <div className="text-danger-deep flex-1 text-[12.5px]">
-            开山合同交货逾期 {kaishanOverdue} 天，累计违约金约 <Money value={kaishanPenalty} className="font-bold" />
-            （按 1‰/日）
-          </div>
+      {overdue.length > 0 && (
+        <div className="bg-danger-bg mt-auto flex flex-col gap-1.5 px-4.5 py-3">
+          {overdue.map((c) => (
+            <Link key={c.id} href={`/contracts/${c.id}`} className="flex items-center gap-2.5">
+              <AlertTriangle size={15} strokeWidth={1.8} className="text-danger-deep shrink-0" />
+              <span className="text-danger-deep min-w-0 flex-1 truncate text-[12.5px]">
+                {supplierById(c.supplierId).short}合同 交货逾期 <span className="font-bold">{overdueDays(c.deliveryDate!)}</span> 天 · 交货期 {fmtDate(c.deliveryDate!)}
+              </span>
+            </Link>
+          ))}
         </div>
       )}
     </div>

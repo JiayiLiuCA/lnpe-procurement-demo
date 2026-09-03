@@ -39,13 +39,13 @@ export default function DashboardPage() {
             }
           />
           <KpiCard
-            label="催发货 / 交货逾期"
-            value={kpis.expedite.count}
+            label="交货逾期"
+            value={kpis.deliveryOverdue.count}
             valueSuffix="份合同"
             valueClassName="text-danger"
             sub={
               <>
-                最长已逾期 <span className="text-danger-deep font-medium">{kpis.expedite.maxOverdueDays} 天</span>
+                最长已逾期 <span className="text-danger-deep font-medium">{kpis.deliveryOverdue.maxOverdueDays} 天</span>
               </>
             }
           />

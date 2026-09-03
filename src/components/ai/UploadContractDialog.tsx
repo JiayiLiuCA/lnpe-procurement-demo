@@ -97,7 +97,7 @@ export function UploadContractDialog({
                 >
                   <span
                     className={`flex h-[15px] w-[15px] shrink-0 items-center justify-center rounded border-[1.5px] ${
-                      checked ? "bg-primary border-primary" : "border-[#CFCCCA] bg-white"
+                      checked ? "bg-ink border-ink" : "border-[#CFCCCA] bg-white"
                     }`}
                   >
                     {checked && <Check size={10} strokeWidth={3.4} className="text-white" />}
@@ -116,7 +116,7 @@ export function UploadContractDialog({
             {uncovered.length === 0 && <div className="text-faint py-6 text-center text-[13px]">所有需采购项均已入合同</div>}
           </div>
           <div className="text-sub text-xs">
-            已勾选 <span className="text-primary-hover font-bold">{sel.size}</span> 项 · 确认后建立已签合同并更新采购单覆盖
+            已勾选 <span className="text-ink font-bold">{sel.size}</span> 项 · 确认后建立已签合同并更新采购单覆盖
           </div>
         </div>
       )}

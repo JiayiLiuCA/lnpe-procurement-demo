@@ -1,8 +1,12 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #E56900;        /* 品牌橙（logo 实测），主操作 */
-  --color-primary-hover: #C75B00;
+  /* 颜色语义规则（2026-09-02）：橙色只做品牌与主操作（logo、侧栏激活、每页一个主按钮、可点击链接），
+     不表达状态。状态一律语义色：success=已完成/通过/已付；info(青)=进行中/当前；
+     warning=待处理/临期；danger=逾期/异常；灰=未开始/已结束；选中态用墨色。 */
+  --color-brand: #E56900;          /* logo 原色，只用于 logo 相邻处（侧栏激活底色） */
+  --color-primary: #DA711B;        /* UI 橙：品牌橙降饱和，主按钮实底 */
+  --color-primary-hover: #C16215;  /* 深一档：链接文字 / 主按钮 hover */
   --color-primary-soft: #FDF1E5;
   --color-ink: #2C2A2A;            /* 正文 / 侧边栏底 */
   --color-ink-2: #595757;          /* 品牌炭灰 */

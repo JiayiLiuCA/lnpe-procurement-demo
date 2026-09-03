@@ -4,7 +4,7 @@ import type { Project } from "@/lib/types";
 export const ORDER_TERMS = [
   {
     title: "第 3 条 · 交货与安装调试",
-    body: "卖方（绵阳流能粉体设备有限公司）应于合同约定交货期内将全部设备运抵买方指定现场，并负责指导安装与调试。逾期交货的，每逾期一日按合同含税总额的 1‰ 向买方支付违约金。",
+    body: "卖方（绵阳流能粉体设备有限公司）应于合同约定交货期内将全部设备运抵买方指定现场，并负责指导安装与调试；发货前 3 个工作日书面通知买方到货时间。",
   },
   {
     title: "第 5 条 · 验收",
@@ -27,7 +27,7 @@ function keyTerms(amount: string, delivery: string, scope: string) {
     { label: "交货期", value: delivery },
     { label: "交付范围", value: scope },
     { label: "付款节点", value: "预付 30% · 验收后 60% · 质保金 10%" },
-    { label: "逾期违约金", value: "合同总额 1‰ / 日" },
+    { label: "运输与安装", value: "卖方运抵现场 · 指导安装调试" },
     { label: "验收方式", value: "72 小时连续负荷试车" },
     { label: "质保期", value: "验收合格起 12 个月" },
     { label: "结算与开票", value: "电汇 · 每笔收款前开等额 13% 专票" },
@@ -35,6 +35,53 @@ function keyTerms(amount: string, delivery: string, scope: string) {
 }
 
 export const projects: Project[] = [
+  // 订单接收阶段：订单合同刚入库，技术部尚未出采购清单
+  {
+    id: "p-260812",
+    code: "260812",
+    name: "宜宾锂宝三元正极粉碎分级线",
+    orderedAt: "2026-08-12",
+    deliveryDeadline: "2026-12-20",
+    owner: "赵小燕",
+    phase: 1,
+    keyStat: "含税 ¥12,300,000 · 2 线",
+    tags: ["待采购清单"],
+    orderContract: {
+      fileName: "260812订单合同.xlsx",
+      no: "LB-LN-260812-01",
+      customer: "宜宾锂宝新材料有限公司",
+      signedAt: "2026-08-12",
+      amountInclTax: 12300000,
+      deliveryDeadline: "2026-12-20",
+      versions: [{ id: "v1", name: "v1 客户签章版", at: "2026-08-12", by: "赵小燕 上传", final: true }],
+      keyTerms: keyTerms("¥12,300,000", "2026-12-20", "三元正极材料气流粉碎分级线成套设备（2 线，含除尘与气力输送）"),
+    },
+  },
+  // 采购清单阶段：第一批清单已提交待审核，库存核对未完成，第二批（电气与自制件）技术部尚未出
+  {
+    id: "p-260706",
+    code: "260706",
+    name: "青海泰丰磷酸铁锂二粉线",
+    orderedAt: "2026-07-06",
+    deliveryDeadline: "2026-11-15",
+    owner: "敬宏",
+    phase: 2,
+    keyStat: "清单 1/2 批 · 待核对 5 项",
+    tags: ["清单待审核"],
+    orderContract: {
+      fileName: "260706订单合同.xlsx",
+      no: "TF-LN-260706-02",
+      customer: "青海泰丰先行锂能科技有限公司",
+      signedAt: "2026-07-06",
+      amountInclTax: 8650000,
+      deliveryDeadline: "2026-11-15",
+      versions: [
+        { id: "v1", name: "v1 客户签章版", at: "2026-07-06", by: "敬宏 上传", final: true },
+        { id: "v2", name: "v2 技术协议附件补签", at: "2026-07-21", by: "敬宏 上传" },
+      ],
+      keyTerms: keyTerms("¥8,650,000", "2026-11-15", "磷酸铁锂二次粉碎分级线成套设备（含脉冲除尘与螺旋输送）"),
+    },
+  },
   {
     id: "p-20260510",
     code: "20260510",
@@ -43,8 +90,7 @@ export const projects: Project[] = [
     deliveryDeadline: "2026-08-15",
     owner: "赵小燕",
     phase: 3,
-    stepNote: "合同覆盖 54/62",
-    keyStat: "需采购 62 · 已入合同 54",
+    keyStat: "需采购 60 · 已入合同 54",
     tags: ["执行中", "交货逾期 5 天"],
     orderContract: {
       fileName: "20260510订单合同.xlsx",
@@ -65,9 +111,8 @@ export const projects: Project[] = [
     deliveryDeadline: "2026-05-30",
     owner: "赵小燕",
     phase: 3,
-    stepNote: "催发货 · 逾期 82 天",
     keyStat: "已付 60% · ¥4,435,200",
-    tags: ["执行中", "催发货"],
+    tags: ["执行中", "交货逾期 82 天"],
     orderContract: {
       fileName: "260227订单合同.xlsx",
       no: "HN-LN-260227-SJ",
@@ -87,7 +132,6 @@ export const projects: Project[] = [
     deliveryDeadline: "2026-06-05",
     owner: "敬宏",
     phase: 3,
-    stepNote: "收货中 3/7 项",
     keyStat: "7 类 63 件 · 异常 1 项",
     tags: ["执行中"],
     orderContract: {
@@ -109,7 +153,6 @@ export const projects: Project[] = [
     deliveryDeadline: "2026-06-30",
     owner: "敬宏",
     phase: 3,
-    stepNote: "收货中 30/36 件",
     keyStat: "质保金 09-15 到期 1 笔",
     tags: ["执行中"],
     orderContract: {
@@ -136,7 +179,6 @@ export const projects: Project[] = [
     owner: "赵小燕",
     phase: 4,
     closedAt: "2026-07-31",
-    stepNote: "已关闭",
     keyStat: "合同 1 份 · 已结清",
     tags: ["已结束"],
     orderContract: {

@@ -6,13 +6,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import {
+  AlertTriangle,
   Archive,
   Download,
   Eye,
   FileSpreadsheet,
   FileText,
   List,
-  Send,
   Sparkles,
   Truck,
   UploadCloud,
@@ -31,7 +31,7 @@ import { ChecklistWorkspace } from "@/components/pc/ChecklistWorkspace";
 import { ChecklistParseDialog } from "@/components/ai/ChecklistParseDialog";
 import { UploadContractDialog } from "@/components/ai/UploadContractDialog";
 import { useAppStore } from "@/store/useAppStore";
-import { checklistStats, paymentPlan } from "@/lib/derive";
+import { checklistStats, overdueContracts, paymentPlan } from "@/lib/derive";
 import { daysUntil, fmtDate } from "@/lib/date";
 import { fmtNum } from "@/lib/money";
 import { dueTone } from "@/lib/rules";
@@ -73,7 +73,7 @@ function orderXlsxRows(oc: OrderContract): XlsxCell[][] {
       { t: fmtNum(oc.amountInclTax), right: true, bold: true },
     ],
     [{ t: "付款方式：预付 30% · 设备到场验收合格后 60% · 质保金 10%（质保期满 30 日内付清）", span: 7 }],
-    [{ t: `交货期：${oc.deliveryDeadline}；逾期交货按合同含税总额 1‰/日 支付违约金`, span: 7 }],
+    [{ t: `交货期：${oc.deliveryDeadline}；卖方负责运抵买方指定现场并指导安装调试`, span: 7 }],
     [{ t: "验收：72 小时连续负荷试车合格；质保期：验收合格之日起 12 个月", span: 7 }],
     [
       { t: "买方（盖章）：", span: 4 },
@@ -89,7 +89,6 @@ export default function ProjectDetailPage() {
   const allChecklists = useAppStore((s) => s.checklists);
   const allContracts = useAppStore((s) => s.contracts);
   const deliveryNotes = useAppStore((s) => s.deliveryNotes);
-  const expedite = useAppStore((s) => s.expedite);
   const closeProject = useAppStore((s) => s.closeProject);
   const [viewPhase, setViewPhase] = useState<number | null>(() => {
     const p = Number(searchParams.get("phase"));
@@ -170,7 +169,7 @@ export default function ProjectDetailPage() {
                 {project.code} <span className="font-medium">{project.name}</span>
               </div>
               {project.tags.map((t) => (
-                <StatusPill key={t} tone={t.includes("逾期") || t.includes("催发货") ? "danger" : t === "已结束" ? "neutral" : "info"}>
+                <StatusPill key={t} tone={t.includes("逾期") ? "danger" : t === "已结束" ? "neutral" : "info"}>
                   {t}
                 </StatusPill>
               ))}
@@ -193,14 +192,15 @@ export default function ProjectDetailPage() {
         <div className="flex gap-3">
           <div className="border-line flex-1 rounded-[10px] border bg-white px-4 py-3">
             <div className="text-sub text-xs">总需采购</div>
-            <div className="text-primary-hover mt-0.5 text-[18px] font-bold tabular-nums">
+            <div className="mt-0.5 text-[18px] font-bold tabular-nums">
               {clStats?.need ?? 0} <span className="text-sub text-xs font-normal">项</span>
             </div>
           </div>
           <div className="border-line flex-1 rounded-[10px] border bg-white px-4 py-3">
             <div className="text-sub text-xs">库存已分配</div>
             <div className="text-success-deep mt-0.5 text-[18px] font-bold tabular-nums">
-              {clStats?.allocated ?? 0} <span className="text-sub text-xs font-normal">项</span>
+              {clStats?.allocated ?? 0}{" "}
+              <span className="text-sub text-xs font-normal">项{clStats && clStats.produce > 0 && ` · 安排生产 ${clStats.produce}`}</span>
             </div>
           </div>
           <div className="border-line flex-[1.7] rounded-[10px] border bg-white px-4 py-3">
@@ -316,7 +316,7 @@ export default function ProjectDetailPage() {
                   <span className="font-bold">合同覆盖</span>
                   {clStats ? (
                     <span className="text-ink-2">
-                      需采购 <span className="text-primary-hover font-bold">{clStats.need}</span> · 已入合同{" "}
+                      需采购 <span className="text-ink font-bold">{clStats.need}</span> · 已入合同{" "}
                       <span className="text-info-deep font-bold">{clStats.contracted}</span> · 待覆盖{" "}
                       <span className="text-warning-deep font-bold">{clStats.need - clStats.contracted}</span>
                     </span>
@@ -326,7 +326,7 @@ export default function ProjectDetailPage() {
                 </div>
                 <div className="bg-line-soft mt-2 flex h-2 overflow-hidden rounded">
                   {clStats && (
-                    <div className="bg-primary" style={{ width: `${Math.round((clStats.contracted / Math.max(clStats.need, 1)) * 100)}%` }} />
+                    <div className={clStats.contracted >= clStats.need ? "bg-success" : "bg-info"} style={{ width: `${Math.round((clStats.contracted / Math.max(clStats.need, 1)) * 100)}%` }} />
                   )}
                 </div>
               </div>
@@ -401,20 +401,15 @@ export default function ProjectDetailPage() {
                 ) : (
                   <div className="text-faint mt-2 text-[12.5px]">近期无到期付款</div>
                 )}
-                {/* 逾期合同催办 */}
-                {contracts
-                  .filter((c) => c.status === "executing" && c.deliveryDate && daysUntil(c.deliveryDate) < 0)
-                  .map((c) => (
-                    <div key={c.id} className="bg-danger-bg mt-3 flex items-center gap-2.5 rounded-lg px-3 py-2.5">
+                {/* 交货逾期提醒：只提示，点击去合同页，不做催办动作 */}
+                {overdueContracts(contracts, deliveryNotes).map((c) => (
+                    <Link key={c.id} href={`/contracts/${c.id}`} className="bg-danger-bg mt-3 flex items-center gap-2.5 rounded-lg px-3 py-2.5">
+                      <AlertTriangle size={14} strokeWidth={1.8} className="text-danger-deep shrink-0" />
                       <span className="text-danger-deep min-w-0 flex-1 truncate text-[12.5px]">
                         {supplierById(c.supplierId).short} {c.no} 交货逾期 {-daysUntil(c.deliveryDate!)} 天
                       </span>
-                      <Btn variant="danger" size="sm" onClick={() => expedite(c.id)}>
-                        <Send size={12} strokeWidth={1.8} />
-                        催发货
-                      </Btn>
-                    </div>
-                  ))}
+                    </Link>
+                ))}
               </div>
               <div className={`${sectionCard} flex-1 px-4.5 py-4`}>
                 <div className="text-sm font-bold">收货任务</div>
@@ -433,7 +428,7 @@ export default function ProjectDetailPage() {
                           {n.status === "done" ? (
                             <StatusPill tone="success">已完成</StatusPill>
                           ) : n.status === "in_progress" ? (
-                            <StatusPill tone="warning">
+                            <StatusPill tone="info">
                               收货中 {processed}/{n.lines.length}
                             </StatusPill>
                           ) : (

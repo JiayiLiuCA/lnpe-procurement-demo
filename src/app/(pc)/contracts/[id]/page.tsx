@@ -3,7 +3,7 @@
 // 合同详情：跟进 / 合同信息 / 校对与版本 三 Tab，接 AI 流程 4（定稿回读）与 5（发票识别）
 import { useState } from "react";
 import { useParams } from "next/navigation";
-import { AlertTriangle, Check, Download, Phone, Send, UploadCloud, X } from "lucide-react";
+import { AlertTriangle, Check, Download, Phone, UploadCloud, X } from "lucide-react";
 import { Topbar, Crumb, CrumbLink } from "@/components/shell/Topbar";
 import { Btn } from "@/components/ui/Btn";
 import { StatusPill } from "@/components/ui/StatusPill";
@@ -19,8 +19,9 @@ import { ReceivingRecord } from "@/components/pc/ReceivingRecord";
 import { AiSimDialog } from "@/components/ai/AiSimDialog";
 import { contractSubPill } from "@/components/pc/ContractCard";
 import { useAppStore } from "@/store/useAppStore";
+import { overdueContracts } from "@/lib/derive";
 import type { Contract, MilestoneKey } from "@/lib/types";
-import { daysUntil, fmtDate } from "@/lib/date";
+import { daysUntil } from "@/lib/date";
 import { exclTax } from "@/lib/money";
 import {
   CONTRACT_STATUS_LABEL,
@@ -31,7 +32,6 @@ import {
   nextAction,
   paidAmount,
   paidRatio,
-  penalty,
 } from "@/lib/rules";
 import { supplierById, BUYER } from "@/fixtures/suppliers";
 import { templateClauses } from "@/fixtures/ai/contract-template";
@@ -41,14 +41,9 @@ import { TODAY } from "@/lib/date";
 
 type TabKey = "follow" | "info" | "review";
 
-function ExecStatusCard({ c }: { c: Contract }) {
-  const expedite = useAppStore((s) => s.expedite);
-  const pushToast = useAppStore((s) => s.pushToast);
-  const total = contractTotal(c);
-  const overdue = c.deliveryDate && c.status === "executing" ? -daysUntil(c.deliveryDate) : 0;
-
-  if (overdue > 0 && total != null) {
-    const lastLog = c.expediteLog?.[c.expediteLog.length - 1];
+/** 执行状态卡：交货逾期时只做提醒（红头 + 交货期 + 逾期天数），不提供催办动作，也不记录沟通 */
+function ExecStatusCard({ c, overdue }: { c: Contract; overdue: number }) {
+  if (overdue > 0) {
     return (
       <div className="rounded-card overflow-hidden border border-[#F0C9C4] bg-white">
         <div className="bg-danger-bg flex items-center gap-2 px-4.5 py-3">
@@ -64,24 +59,7 @@ function ExecStatusCard({ c }: { c: Contract }) {
             <span className="text-sub">已逾期</span>
             <span className="text-danger-deep font-bold">{overdue} 天</span>
           </div>
-          <div className="flex justify-between text-[13px]">
-            <span className="text-sub">累计违约金（1‰/日）</span>
-            <span className="text-danger-deep font-bold tabular-nums">≈ <Money value={penalty(total, overdue)} /></span>
-          </div>
-          <div className="mt-1 flex items-center gap-2">
-            <Btn variant="danger" className="flex-1" onClick={() => expedite(c.id)}>
-              <Send size={14} strokeWidth={1.8} />
-              催发货
-            </Btn>
-            <Btn variant="secondary" className="flex-1" onClick={() => pushToast("沟通记录已保存（演示）")}>
-              记录沟通
-            </Btn>
-          </div>
-          {lastLog && (
-            <div className="text-sub text-[11.5px]">
-              上次催办 {fmtDate(lastLog.at)} · {lastLog.note}
-            </div>
-          )}
+          <div className="text-sub border-line-soft border-t pt-2.5 text-[11.5px]">请与卖方经办 {c.sellerContactName} 确认发货安排</div>
         </div>
       </div>
     );
@@ -145,7 +123,7 @@ export default function ContractDetailPage() {
   const supplier = supplierById(c.supplierId);
   const partial = deliveryNotes.some((n) => n.contractIds.includes(c.id) && n.status === "in_progress");
   const sub = contractSubPill(c, partial);
-  const overdue = c.deliveryDate && c.status === "executing" ? -daysUntil(c.deliveryDate) : 0;
+  const overdue = overdueContracts([c], deliveryNotes).length > 0 ? -daysUntil(c.deliveryDate!) : 0;
   const advanceLabel = nextAction(c.status);
   const invMilestone = invoiceMKey ? c.milestones.find((m) => m.key === invoiceMKey) : null;
   const invMilestoneAmount = invMilestone && total != null ? milestoneAmount(total, invMilestone.ratio) : 0;
@@ -170,12 +148,6 @@ export default function ContractDetailPage() {
                 下载 xlsx
               </Btn>
             </a>
-            {overdue > 0 && (
-              <Btn variant="danger" onClick={() => useAppStore.getState().expedite(c.id)}>
-                <Send size={14} strokeWidth={1.8} />
-                催发货
-              </Btn>
-            )}
             {advanceLabel && (
               <Btn
                 variant="primary"
@@ -288,7 +260,7 @@ export default function ContractDetailPage() {
             </div>
 
             <div className="flex min-w-0 flex-1 flex-col gap-3.5">
-              <ExecStatusCard c={c} />
+              <ExecStatusCard c={c} overdue={overdue} />
 
               <div className="border-line rounded-card flex flex-col gap-2.5 border bg-white px-4.5 py-3.5">
                 <div className="flex items-center justify-between">

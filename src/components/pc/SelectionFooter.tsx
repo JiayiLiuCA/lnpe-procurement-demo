@@ -1,38 +1,84 @@
 "use client";
 
+// 清单吸底操作栏：标记库存分配 / 安排生产（公司自制）/ 上传合同 / AI 生成采购合同
 import { useState } from "react";
-import { Sparkles, UploadCloud } from "lucide-react";
+import { Factory, Sparkles, UploadCloud } from "lucide-react";
 import type { ChecklistRow } from "@/lib/types";
 import { Btn } from "@/components/ui/Btn";
+import { TODAY } from "@/lib/date";
+import { fmtNum } from "@/lib/money";
+
+export interface ProductionPlan {
+  produceBy: string;
+  note: string;
+}
+
+/** 'YYYY-MM-DD' + n 天（仅作输入框默认值） */
+function plusDays(d: string, n: number): string {
+  const [y, m, day] = d.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, day + n)).toISOString().slice(0, 10);
+}
+
+const INPUT_CLASS = "border-line rounded-ctl text-ink border px-2 py-1 text-[13px] outline-none focus:border-[#CFCCCA]";
 
 export function SelectionFooter({
   selectedRows,
   onMarkAllocation,
+  onArrangeProduction,
   onGenerate,
   onUploadContract,
+  estimate,
 }: {
   selectedRows: ChecklistRow[];
   onMarkAllocation: (qty: number) => void;
+  /** null = 撤销生产安排（改回需采购） */
+  onArrangeProduction: (plan: ProductionPlan | null) => void;
   onGenerate: () => void;
   onUploadContract?: () => void;
+  /** 所选需采购行的 AI 预估采购额（预估单价 × 需采购数） */
+  estimate?: number;
 }) {
   const [allocOpen, setAllocOpen] = useState(false);
   const [allocQty, setAllocQty] = useState("1");
+  const [prodOpen, setProdOpen] = useState(false);
+  const [produceBy, setProduceBy] = useState(() => plusDays(TODAY, 14));
+  const [prodNote, setProdNote] = useState("");
+
   const n = selectedRows.length;
-  const needSum = selectedRows.reduce((s, r) => s + (typeof r.qty === "number" ? r.alloc.need || r.qty : 0), 0);
-  const brands = [...new Set(selectedRows.map((r) => r.brands).filter(Boolean))].join("、");
+  // 自制件不出合同：需采购统计与合同类动作只看非「安排生产」行
+  const buyRows = selectedRows.filter((r) => r.alloc.status !== "produce");
+  const prodRows = selectedRows.filter((r) => r.alloc.status === "produce");
+  const contractedSel = selectedRows.filter((r) => r.contractId).length;
+  const needSum = buyRows.reduce((s, r) => s + (typeof r.qty === "number" ? r.alloc.need || r.qty : 0), 0);
+  const brands = [...new Set(buyRows.map((r) => r.brands).filter(Boolean))].join("、");
 
   return (
     <div className="border-line-soft mt-auto flex items-center gap-3.5 border-t bg-white px-4 py-3">
       <div className="text-[13px]">
-        已选 <span className="text-primary-hover font-bold">{n}</span> 项{needSum > 0 && <> · 需采购 {needSum} 台套</>}
+        已选 <span className="text-ink font-bold">{n}</span> 项{needSum > 0 && <> · 需采购 {needSum} 台套</>}
+        {prodRows.length > 0 && <> · 自制 {prodRows.length} 项</>}
+        {!!estimate && (
+          <>
+            {" "}
+            · AI 预估 <span className="font-bold tabular-nums">¥{fmtNum(estimate)}</span>
+          </>
+        )}
       </div>
       <div className="text-sub text-[12.5px]">
         {brands ? `候选品牌：${brands} · ` : ""}跨子系统同供应商项将自动合并为一份合同
       </div>
       <div className="flex-1" />
+
+      {/* 标记库存分配 */}
       <div className="relative">
-        <Btn variant="secondary" disabled={n === 0} onClick={() => setAllocOpen((v) => !v)}>
+        <Btn
+          variant="secondary"
+          disabled={n === 0}
+          onClick={() => {
+            setAllocOpen((v) => !v);
+            setProdOpen(false);
+          }}
+        >
           标记库存分配
         </Btn>
         {allocOpen && (
@@ -40,13 +86,7 @@ export function SelectionFooter({
             <div className="text-[13px] font-bold">标记库存分配</div>
             <label className="text-sub flex items-center gap-2 text-xs">
               分配数量
-              <input
-                type="number"
-                min={0}
-                value={allocQty}
-                onChange={(e) => setAllocQty(e.target.value)}
-                className="border-line rounded-ctl text-ink w-20 border px-2 py-1 text-[13px] tabular-nums outline-none focus:border-[#CFCCCA]"
-              />
+              <input type="number" min={0} value={allocQty} onChange={(e) => setAllocQty(e.target.value)} className={`${INPUT_CLASS} w-20 tabular-nums`} />
             </label>
             <div className="text-faint text-[11px]">分配数 ≥ 需求数记为「已分配」，否则记为「部分分配」</div>
             <div className="flex justify-end gap-2">
@@ -67,13 +107,80 @@ export function SelectionFooter({
           </div>
         )}
       </div>
+
+      {/* 安排生产（公司自制） */}
+      <div className="relative">
+        <Btn
+          variant="secondary"
+          disabled={n === 0}
+          onClick={() => {
+            setProdOpen((v) => !v);
+            setAllocOpen(false);
+          }}
+        >
+          <Factory size={14} strokeWidth={1.8} />
+          安排生产
+        </Btn>
+        {prodOpen && (
+          <div className="border-line absolute right-0 bottom-full z-20 mb-2 flex w-[300px] flex-col gap-2.5 rounded-[10px] border bg-white p-3.5 shadow-xl">
+            <div className="text-[13px] font-bold">安排生产（公司自制）</div>
+            <label className="text-sub flex items-center gap-2 text-xs">
+              <span className="w-14 shrink-0">计划完工</span>
+              <input type="date" value={produceBy} onChange={(e) => setProduceBy(e.target.value)} className={`${INPUT_CLASS} flex-1 tabular-nums`} />
+            </label>
+            <label className="text-sub flex items-center gap-2 text-xs">
+              <span className="w-14 shrink-0">备注</span>
+              <input
+                type="text"
+                value={prodNote}
+                onChange={(e) => setProdNote(e.target.value)}
+                placeholder="车间 / 图号，可不填"
+                className={`${INPUT_CLASS} min-w-0 flex-1`}
+              />
+            </label>
+            <div className="text-faint text-[11px]">
+              标记后不计入需采购、不进入采购合同；已入合同的行会跳过{contractedSel > 0 && `（本次 ${contractedSel} 行）`}
+            </div>
+            <div className="flex justify-end gap-2">
+              {prodRows.length > 0 && (
+                <Btn
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    onArrangeProduction(null);
+                    setProdOpen(false);
+                  }}
+                >
+                  撤销安排
+                </Btn>
+              )}
+              <Btn variant="secondary" size="sm" onClick={() => setProdOpen(false)}>
+                取消
+              </Btn>
+              <Btn
+                variant="primary"
+                size="sm"
+                disabled={!produceBy || buyRows.length === contractedSel}
+                onClick={() => {
+                  onArrangeProduction({ produceBy, note: prodNote.trim() });
+                  setProdOpen(false);
+                  setProdNote("");
+                }}
+              >
+                确认安排
+              </Btn>
+            </div>
+          </div>
+        )}
+      </div>
+
       {onUploadContract && (
-        <Btn variant="secondary" disabled={n === 0} onClick={onUploadContract}>
+        <Btn variant="secondary" disabled={buyRows.length === 0} onClick={onUploadContract}>
           <UploadCloud size={14} strokeWidth={1.8} />
           上传合同（勾选覆盖）
         </Btn>
       )}
-      <Btn variant="primary" disabled={n === 0} onClick={onGenerate}>
+      <Btn variant="primary" disabled={buyRows.length === 0} onClick={onGenerate}>
         <Sparkles size={14} strokeWidth={1.8} />
         AI 生成采购合同
       </Btn>
