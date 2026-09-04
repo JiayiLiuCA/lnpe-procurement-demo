@@ -9,6 +9,7 @@ import { Topbar, Crumb } from "@/components/shell/Topbar";
 import { TodoList } from "@/components/pc/TodoList";
 import { PaymentPlanPanel } from "@/components/pc/PaymentPlanPanel";
 import { ProjectWallRow } from "@/components/pc/ProjectWallRow";
+import { StepHeader, STEP_COL_W } from "@/components/ui/StepProgress";
 import { useAppStore } from "@/store/useAppStore";
 
 export default function DashboardPage() {
@@ -79,11 +80,13 @@ export default function DashboardPage() {
               全部项目
             </Link>
           </div>
-          <div className="text-sub border-line-soft flex border-b bg-[#FBFAF9] px-4.5 py-2 text-xs font-medium">
+          <div className="text-sub border-line-soft flex items-end border-b bg-[#FBFAF9] px-4.5 py-2 text-xs font-medium">
             <div className="w-[90px]">项目号</div>
             <div className="w-[210px]">项目名称</div>
-            <div className="flex-1">阶段（订单接收 → 采购清单 → 合同执行 → 订单关闭）</div>
-            <div className="w-[190px]">关键数字</div>
+            <div className="shrink-0" style={{ width: STEP_COL_W }}>
+              <StepHeader />
+            </div>
+            <div className="flex-1 px-3">进展</div>
             <div className="w-[70px]">负责人</div>
           </div>
           {projects.map((p, i) => (

@@ -18,7 +18,7 @@ export interface OrderContract {
   amountInclTax: number;
   deliveryDeadline: string;
   versions: Version[];
-  /** AI 抓取的重要条目（订单接收阶段列举展示） */
+  /** AI 抓取的重要条目（订单接收步骤列举展示） */
   keyTerms: { label: string; value: string }[];
 }
 
@@ -29,12 +29,11 @@ export interface Project {
   orderedAt: string;
   deliveryDeadline: string;
   owner: string;
-  /** 四大阶段：1 订单接收 → 2 采购清单（含库存核对与出合同）→ 3 合同执行（付款/发货/收货）→ 4 订单关闭 */
-  phase: 1 | 2 | 3 | 4;
-  /** 已关闭日期；有值即项目结束，全部信息仍可见 */
+  /**
+   * 已关闭日期；有值即项目结束，全部信息仍可见。
+   * 项目所处步骤、头部标签、进展文案一律由清单 / 合同 / 送货单派生（见 lib/steps.ts），不落库。
+   */
   closedAt?: string;
-  keyStat: string;
-  tags: string[];
   orderContract: OrderContract;
 }
 
@@ -97,11 +96,11 @@ export interface Checklist {
   sheets: Sheet[];
 }
 
+/** 签订后直接进入执行（交货跟进），不再有单独的「已签订」档 */
 export type ContractStatus =
   | "ai_draft"
   | "reviewing"
   | "finalized"
-  | "signed"
   | "executing"
   | "arrived"
   | "warranty"
@@ -174,7 +173,8 @@ export interface DeliveryLine {
   state: DeliveryLineState;
   confirmedAt?: string;
   photoCount: number;
-  exception?: { type: "数量不符" | "破损"; actualQty?: number; note: string };
+  /** resolvedAt 有值 = 采购员已与卖方处理完毕（现场收货步骤不再算异常） */
+  exception?: { type: "数量不符" | "破损"; actualQty?: number; note: string; resolvedAt?: string };
 }
 
 export interface DeliveryNote {

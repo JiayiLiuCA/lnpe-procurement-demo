@@ -23,7 +23,7 @@ export default function ChecklistDetailPage() {
   return (
     <div className="flex min-h-dvh flex-col">
       <Topbar
-        backHref={project ? `/projects/${project.id}?phase=2` : "/projects"}
+        backHref={project ? `/projects/${project.id}?step=2` : "/projects"}
         crumbs={
           <>
             <CrumbLink href="/projects">项目管理</CrumbLink> /{" "}

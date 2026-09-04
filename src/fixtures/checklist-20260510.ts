@@ -1,7 +1,7 @@
 import type { Checklist, ChecklistRow, Sheet } from "@/lib/types";
 
-// 行状态恒等式：8 全分配 + 59 全需采购 + 2 安排生产 + 1 部分分配 + 1 待核对 = 71
-// 派生结果：已分配 9 项 / 需采购 60 项 / 安排生产 2 项 / 已入合同 54 项
+// 行状态恒等式：9 全分配 + 59 全需采购 + 2 安排生产 + 1 部分分配 = 71（待核对 0，订货安排已完成）
+// 派生结果：已分配 10 项 / 需采购 60 项 / 安排生产 2 项 / 已入合同 54 项 → 项目停在「子合同」步（覆盖 54/60）
 
 export type RowSpec = {
   name: string;
@@ -273,7 +273,7 @@ const sheet4: Sheet = {
       unit: "t",
       section: "自制件",
       techNote: "95陶瓷含5%余量；子母扣拼接，配耐磨胶粘贴；到货后按图复核数量。",
-      st: "w",
+      st: "a",
     },
     { name: "溜管及弯头组件", spec: "φ219×3", material: "304 内衬陶瓷", qty: 18, unit: "件", section: "自制件", techNote: "详见图纸；弯头 R≥1.5D，内衬 92 陶瓷贴片。", hasDrawing: true, st: "n", contractId: "c-draft-1" },
     { name: "检修平台及爬梯", spec: "LNPT-2", material: "Q235B 热镀锌", qty: 2, unit: "套", section: "自制件", techNote: "详见图纸；载荷 2kN/m²；栏杆高 1.05m。", hasDrawing: true, st: "m", produceBy: "2026-09-20" },

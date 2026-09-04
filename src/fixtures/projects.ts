@@ -35,7 +35,7 @@ function keyTerms(amount: string, delivery: string, scope: string) {
 }
 
 export const projects: Project[] = [
-  // 订单接收阶段：订单合同刚入库，技术部尚未出采购清单
+  // 步骤 2 采购清单：订单合同刚入库，技术部尚未出采购清单（步骤、标签、进展全部由 lib/steps.ts 派生）
   {
     id: "p-260812",
     code: "260812",
@@ -43,9 +43,6 @@ export const projects: Project[] = [
     orderedAt: "2026-08-12",
     deliveryDeadline: "2026-12-20",
     owner: "赵小燕",
-    phase: 1,
-    keyStat: "含税 ¥12,300,000 · 2 线",
-    tags: ["待采购清单"],
     orderContract: {
       fileName: "260812订单合同.xlsx",
       no: "LB-LN-260812-01",
@@ -57,7 +54,7 @@ export const projects: Project[] = [
       keyTerms: keyTerms("¥12,300,000", "2026-12-20", "三元正极材料气流粉碎分级线成套设备（2 线，含除尘与气力输送）"),
     },
   },
-  // 采购清单阶段：第一批清单已提交待审核，库存核对未完成，第二批（电气与自制件）技术部尚未出
+  // 步骤 2 采购清单：第一批清单已提交待审核，待核对 5 项，第二批（电气与自制件）技术部尚未出
   {
     id: "p-260706",
     code: "260706",
@@ -65,9 +62,6 @@ export const projects: Project[] = [
     orderedAt: "2026-07-06",
     deliveryDeadline: "2026-11-15",
     owner: "敬宏",
-    phase: 2,
-    keyStat: "清单 1/2 批 · 待核对 5 项",
-    tags: ["清单待审核"],
     orderContract: {
       fileName: "260706订单合同.xlsx",
       no: "TF-LN-260706-02",
@@ -89,9 +83,6 @@ export const projects: Project[] = [
     orderedAt: "2026-05-23",
     deliveryDeadline: "2026-08-15",
     owner: "赵小燕",
-    phase: 3,
-    keyStat: "需采购 60 · 已入合同 54",
-    tags: ["执行中", "交货逾期 5 天"],
     orderContract: {
       fileName: "20260510订单合同.xlsx",
       no: "XLX-LN-20260510-01",
@@ -110,9 +101,6 @@ export const projects: Project[] = [
     orderedAt: "2026-03-02",
     deliveryDeadline: "2026-05-30",
     owner: "赵小燕",
-    phase: 3,
-    keyStat: "已付 60% · ¥4,435,200",
-    tags: ["执行中", "交货逾期 82 天"],
     orderContract: {
       fileName: "260227订单合同.xlsx",
       no: "HN-LN-260227-SJ",
@@ -131,9 +119,6 @@ export const projects: Project[] = [
     orderedAt: "2026-03-07",
     deliveryDeadline: "2026-06-05",
     owner: "敬宏",
-    phase: 3,
-    keyStat: "7 类 63 件 · 异常 1 项",
-    tags: ["执行中"],
     orderContract: {
       fileName: "260209订单合同.xlsx",
       no: "JS-LN-260209-02",
@@ -152,9 +137,6 @@ export const projects: Project[] = [
     orderedAt: "2025-12-30",
     deliveryDeadline: "2026-06-30",
     owner: "敬宏",
-    phase: 3,
-    keyStat: "质保金 09-15 到期 1 笔",
-    tags: ["执行中"],
     orderContract: {
       fileName: "251230订单合同.xlsx",
       no: "XX-LN-251230-06",
@@ -169,7 +151,7 @@ export const projects: Project[] = [
       keyTerms: keyTerms("¥6,800,000", "2026-06-30", "二期粉体分级系统成套设备"),
     },
   },
-  // 已结束项目：全部信息依旧可见
+  // 已结束项目（closedAt 有值即 7 步全勾）：全部信息依旧可见
   {
     id: "p-251102",
     code: "251102",
@@ -177,10 +159,7 @@ export const projects: Project[] = [
     orderedAt: "2025-11-02",
     deliveryDeadline: "2026-06-30",
     owner: "赵小燕",
-    phase: 4,
     closedAt: "2026-07-31",
-    keyStat: "合同 1 份 · 已结清",
-    tags: ["已结束"],
     orderContract: {
       fileName: "251102订单合同.xlsx",
       no: "XX-LN-251102-03",

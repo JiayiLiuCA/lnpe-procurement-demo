@@ -58,6 +58,10 @@ interface AppState {
   runCostForecast: () => void;
   /** 提醒中心：把待办标记为已办（工作台与侧栏角标随之减少） */
   markTodoDone: (id: string) => void;
+  /** 清单签核：审核通过（填 reviewAt）/ 批准（填 approveAt，状态→已批准，该项目的清单审核待办自动完成） */
+  signoffChecklist: (checklistId: string, step: "review" | "approve") => void;
+  /** 收货异常已与卖方处理完毕：现场收货步骤不再算异常，对应的收货异常待办自动完成 */
+  resolveException: (noteId: string, seq: number) => void;
   generateDraftContracts: (checklistId: string, rowIds: string[]) => string[];
   /** 人工上传已签合同 xlsx → 勾选 cover 的采购行 → 建合同并更新 coverage */
   uploadContractCover: (checklistId: string, rowIds: string[]) => string | null;
@@ -220,7 +224,6 @@ export const useAppStore = create<AppState>()(
                   })),
                 },
           ),
-          projects: st.projects.map((p) => (p.id === cl.projectId && p.phase < 3 ? { ...p, phase: 3 as const } : p)),
         }));
         return newContracts.map((c) => c.id);
       },
@@ -241,7 +244,7 @@ export const useAppStore = create<AppState>()(
           projectId: cl.projectId,
           supplierId: uploadContractParse.supplierId,
           summary: `${rows[0].name}等 ${rows.length} 项（上传合同）`,
-          status: "signed",
+          status: "executing",
           signedAt: uploadContractParse.signedAt,
           deliveryDate: uploadContractParse.deliveryDate,
           amountInclTax: uploadContractParse.amountInclTax,
@@ -280,7 +283,6 @@ export const useAppStore = create<AppState>()(
                   })),
                 },
           ),
-          projects: st.projects.map((p) => (p.id === cl.projectId && p.phase < 3 ? { ...p, phase: 3 as const } : p)),
         }));
         return id;
       },
@@ -290,9 +292,7 @@ export const useAppStore = create<AppState>()(
         if (!p || p.closedAt) return;
         set((s) => ({
           projects: s.projects.map((x) =>
-            x.id !== projectId
-              ? x
-              : { ...x, phase: 4 as const, closedAt: TODAY, tags: ["已结束"] },
+            x.id !== projectId ? x : { ...x, closedAt: TODAY },
           ),
           activities: [
             {
@@ -340,7 +340,7 @@ export const useAppStore = create<AppState>()(
             const i = CONTRACT_STATUS_ORDER.indexOf(c.status);
             if (i < 0 || i >= CONTRACT_STATUS_ORDER.length - 1) return c;
             const next = CONTRACT_STATUS_ORDER[i + 1];
-            return { ...c, status: next, signedAt: next === "signed" ? TODAY : c.signedAt };
+            return { ...c, status: next, signedAt: next === "executing" ? TODAY : c.signedAt };
           }),
         })),
 
@@ -392,7 +392,7 @@ export const useAppStore = create<AppState>()(
           };
         }),
 
-      // AI 流程 2：幂等 upsert cl-20260510-1，版本号 +1；项目至少推进到「采购清单」阶段
+      // AI 流程 2：幂等 upsert cl-20260510-1，版本号 +1（项目步骤由清单状态派生，无需另行推进）
       upsertChecklistParse: () =>
         set((s) => ({
           checklists: s.checklists.map((cl) => {
@@ -401,9 +401,6 @@ export const useAppStore = create<AppState>()(
             const n = m ? Number(m[1]) + 1 : 2;
             return { ...cl, version: `5.30（v${n}）` };
           }),
-          projects: s.projects.map((p) =>
-            p.id === "p-20260510" && p.phase < 2 ? { ...p, phase: 2 as const } : p,
-          ),
         })),
 
       confirmDeliveryLine: (noteId, seq) =>
@@ -496,6 +493,40 @@ export const useAppStore = create<AppState>()(
 
       markTodoDone: (id) => set((s) => ({ todos: s.todos.map((t) => (t.id === id ? { ...t, done: true } : t)) })),
 
+      signoffChecklist: (checklistId, step) =>
+        set((s) => {
+          const cl = s.checklists.find((c) => c.id === checklistId);
+          if (!cl) return {};
+          const checklists = s.checklists.map((c) =>
+            c.id !== checklistId
+              ? c
+              : step === "review"
+                ? { ...c, signoff: { ...c.signoff, reviewAt: c.signoff.reviewAt ?? TODAY } }
+                : { ...c, status: "已批准" as const, signoff: { ...c.signoff, reviewAt: c.signoff.reviewAt ?? TODAY, approveAt: TODAY } },
+          );
+          const todos =
+            step === "approve" ? s.todos.map((t) => (t.kind === "review" && t.href.includes(cl.projectId) ? { ...t, done: true } : t)) : s.todos;
+          return { checklists, todos };
+        }),
+
+      resolveException: (noteId, seq) =>
+        set((s) => {
+          const note = s.deliveryNotes.find((n) => n.id === noteId);
+          const line = note?.lines.find((l) => l.seq === seq);
+          if (!note || !line?.exception) return {};
+          return {
+            deliveryNotes: s.deliveryNotes.map((n) =>
+              n.id !== noteId
+                ? n
+                : {
+                    ...n,
+                    lines: n.lines.map((l) => (l.seq === seq && l.exception ? { ...l, exception: { ...l.exception, resolvedAt: TODAY } } : l)),
+                  },
+            ),
+            todos: s.todos.map((t) => (t.kind === "receive_exception" && t.href.endsWith(line.contractId) ? { ...t, done: true } : t)),
+          };
+        }),
+
       resetDemo: () => {
         try {
           window.localStorage.removeItem("lnpe-demo-v1");
@@ -510,7 +541,7 @@ export const useAppStore = create<AppState>()(
       name: "lnpe-demo-v2",
       // 数据结构/种子内容变更时递增：版本不匹配的旧 localStorage 会被直接丢弃（回到种子数据），
       // 避免旧结构（如缺 keyTerms 的 orderContract）rehydrate 后覆盖新种子导致运行时崩溃
-      version: 9,
+      version: 10,
       storage: createJSONStorage(() => localStorage),
       skipHydration: true,
       partialize: (s) =>

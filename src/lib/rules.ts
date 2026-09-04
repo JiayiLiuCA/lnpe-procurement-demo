@@ -32,7 +32,6 @@ export const CONTRACT_STATUS_ORDER: ContractStatus[] = [
   "ai_draft",
   "reviewing",
   "finalized",
-  "signed",
   "executing",
   "arrived",
   "warranty",
@@ -43,14 +42,13 @@ export const CONTRACT_STATUS_LABEL: Record<ContractStatus, string> = {
   ai_draft: "AI草稿",
   reviewing: "待校对",
   finalized: "已定稿",
-  signed: "已签订",
   executing: "执行中",
   arrived: "已到货",
   warranty: "质保期",
   closed: "已完结",
 };
 
-/** 详情页主按钮文案；null 表示无推进动作 */
+/** 详情页主按钮文案；null 表示无推进动作。标记已签订后直接进入执行（交货跟进），没有单独的「开始执行」 */
 export function nextAction(status: ContractStatus): string | null {
   switch (status) {
     case "ai_draft":
@@ -59,8 +57,6 @@ export function nextAction(status: ContractStatus): string | null {
       return "定稿";
     case "finalized":
       return "标记已签订";
-    case "signed":
-      return "开始执行";
     case "arrived":
       return "进入质保期";
     case "warranty":

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { FolderInput, UploadCloud } from "lucide-react";
 import { Topbar, Crumb } from "@/components/shell/Topbar";
 import { Btn } from "@/components/ui/Btn";
-import { PhaseChips } from "@/components/ui/PhaseProgress";
+import { StepHeader, StepIcons, StepSummary, STEP_COL_W } from "@/components/ui/StepProgress";
 import { Money } from "@/components/ui/Money";
 import { MilestoneBar } from "@/components/ui/MilestoneBar";
 import { AiSimDialog } from "@/components/ai/AiSimDialog";
@@ -144,12 +144,14 @@ export default function ProjectsPage() {
           ))}
         </div>
         <div className="border-line rounded-card flex flex-col overflow-hidden border bg-white">
-          <div className="text-sub border-line-soft flex border-b bg-[#FBFAF9] px-4.5 py-2 text-xs font-medium">
+          <div className="text-sub border-line-soft flex items-end border-b bg-[#FBFAF9] px-4.5 py-2 text-xs font-medium">
             <div className="w-[80px]">项目号</div>
             <div className="w-[210px]">项目名称</div>
             <div className="w-[90px]">立项时间</div>
-            <div className="flex-1">阶段</div>
-            <div className="w-[180px]">关键数字</div>
+            <div className="shrink-0" style={{ width: STEP_COL_W }}>
+              <StepHeader />
+            </div>
+            <div className="flex-1 px-3">进展</div>
             <div className="w-[64px]">负责人</div>
           </div>
           {shown.map((p, i) => (
@@ -164,10 +166,10 @@ export default function ProjectsPage() {
               <div className="w-[80px] font-bold tabular-nums">{p.code}</div>
               <div className="w-[210px] pr-2">{p.name}</div>
               <div className="text-ink-2 w-[90px] tabular-nums">{p.orderedAt.slice(2)}</div>
-              <div className="flex-1 pr-2">
-                <PhaseChips project={p} />
+              <div className="shrink-0" style={{ width: STEP_COL_W }}>
+                <StepIcons project={p} />
               </div>
-              <div className="text-ink-2 w-[180px] text-[12.5px]">{p.keyStat}</div>
+              <StepSummary project={p} className="text-ink-2 min-w-0 flex-1 truncate px-3 text-[12.5px]" />
               <div className="text-ink-2 w-[64px]">{p.owner}</div>
             </button>
           ))}

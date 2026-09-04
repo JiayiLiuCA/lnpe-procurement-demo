@@ -1,7 +1,7 @@
 "use client";
 
-// 项目详情：四大阶段线性呈现（订单接收 → 采购清单 → 合同执行 → 订单关闭）
-// 点击 phase 切换内容，默认停在当前阶段；支持 ?phase=n 直达
+// 项目详情：货物轨 7 步（订单接收 → 采购清单 → 订货安排 → 子合同 → 交货跟进 → 现场收货 → 订单关闭）+ 付款开票轨
+// 点击步骤切换内容，默认停在当前步（由 lib/steps 派生）；支持 ?step=n 直达，旧 ?phase=n 自动映射
 import { useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
@@ -20,7 +20,7 @@ import {
 import { Topbar, Crumb, CrumbLink } from "@/components/shell/Topbar";
 import { Btn } from "@/components/ui/Btn";
 import { StatusPill } from "@/components/ui/StatusPill";
-import { PhaseStepper } from "@/components/ui/PhaseProgress";
+import { StepStepper } from "@/components/ui/StepProgress";
 import { Money } from "@/components/ui/Money";
 import { CountdownChip } from "@/components/ui/CountdownChip";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -37,7 +37,8 @@ import { fmtNum } from "@/lib/money";
 import { dueTone } from "@/lib/rules";
 import { supplierById, BUYER } from "@/fixtures/suppliers";
 import { projects as seedProjects } from "@/fixtures/projects";
-import type { OrderContract } from "@/lib/types";
+import { projectProgress, type StepNo } from "@/lib/steps";
+import type { MilestoneKey, OrderContract } from "@/lib/types";
 
 function orderXlsxRows(oc: OrderContract): XlsxCell[][] {
   const scope = oc.keyTerms?.find((k) => k.label === "交付范围")?.value ?? "成套设备";
@@ -90,10 +91,14 @@ export default function ProjectDetailPage() {
   const allContracts = useAppStore((s) => s.contracts);
   const deliveryNotes = useAppStore((s) => s.deliveryNotes);
   const closeProject = useAppStore((s) => s.closeProject);
-  const [viewPhase, setViewPhase] = useState<number | null>(() => {
-    const p = Number(searchParams.get("phase"));
-    return p >= 1 && p <= 4 ? p : null;
+  const [viewStep, setViewStep] = useState<StepNo | null>(() => {
+    const n = Number(searchParams.get("step"));
+    if (n >= 1 && n <= 7) return n as StepNo;
+    // 旧链接兼容：四阶段 phase=1..4 → 步骤 1 / 2 / 5 / 7
+    const legacy: Record<number, StepNo> = { 1: 1, 2: 2, 3: 5, 4: 7 };
+    return legacy[Number(searchParams.get("phase"))] ?? null;
   });
+  const [moneyKey, setMoneyKey] = useState<MilestoneKey | null>(null);
   const [uploadClOpen, setUploadClOpen] = useState(false);
   const [uploadCtOpen, setUploadCtOpen] = useState(false);
   const [xlsxOpen, setXlsxOpen] = useState(false);
@@ -117,7 +122,8 @@ export default function ProjectDetailPage() {
     (s, c) => s + c.milestones.filter((m) => m.status === "paid").reduce((x, m) => x + Math.round((c.amountInclTax ?? 0) * m.ratio), 0),
     0,
   );
-  const phase = viewPhase ?? project.phase;
+  const progress = projectProgress(project, allChecklists, allContracts, deliveryNotes);
+  const step: StepNo = viewStep ?? progress.current ?? 7;
   // 防御性回退：localStorage 里的旧结构项目可能缺 orderContract/keyTerms，逐字段用种子数据补齐
   const seedOc = seedProjects.find((p) => p.id === project.id)?.orderContract;
   const baseOc = project.orderContract ?? seedOc;
@@ -161,16 +167,16 @@ export default function ProjectDetailPage() {
         }
       />
       <div className="flex flex-1 flex-col gap-3.5 p-6">
-        {/* 头卡：标题 + 可点击阶段条 */}
-        <div className="border-line rounded-card flex items-center gap-6 border bg-white px-5.5 py-4">
+        {/* 头卡：标题 + 派生标签 + 可点击步骤条（含付款开票轨） */}
+        <div className="border-line rounded-card flex flex-col gap-4 border bg-white px-5.5 py-4">
           <div className="min-w-0">
             <div className="flex items-center gap-3">
               <div className="text-xl font-bold">
                 {project.code} <span className="font-medium">{project.name}</span>
               </div>
-              {project.tags.map((t) => (
-                <StatusPill key={t} tone={t.includes("逾期") ? "danger" : t === "已结束" ? "neutral" : "info"}>
-                  {t}
+              {progress.tags.map((t) => (
+                <StatusPill key={t.text} tone={t.tone}>
+                  {t.text}
                 </StatusPill>
               ))}
             </div>
@@ -183,9 +189,7 @@ export default function ProjectDetailPage() {
               {project.closedAt && ` · 已于 ${project.closedAt} 关闭`}
             </div>
           </div>
-          <div className="min-w-[420px] max-w-[560px] flex-1">
-            <PhaseStepper project={project} viewPhase={phase} onSelect={setViewPhase} />
-          </div>
+          <StepStepper project={project} viewStep={step} onSelect={setViewStep} moneyKey={moneyKey} onSelectMoney={setMoneyKey} />
         </div>
 
         {/* 核心统计（6 张） */}
@@ -237,7 +241,7 @@ export default function ProjectDetailPage() {
         </div>
 
         {/* 阶段内容（全宽） */}
-        {phase === 1 && (
+        {step === 1 && (
           <>
             <div className={`${sectionCard} flex items-center gap-4.5 px-5 py-4`}>
               <div className="bg-primary-soft text-primary-hover flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px]">
@@ -291,7 +295,7 @@ export default function ProjectDetailPage() {
           </>
         )}
 
-        {phase === 2 &&
+        {(step === 2 || step === 3 || step === 4) &&
           (cl ? (
             <ChecklistWorkspace checklist={cl} />
           ) : (
@@ -307,7 +311,7 @@ export default function ProjectDetailPage() {
             </div>
           ))}
 
-        {phase === 3 && (
+        {(step === 5 || step === 6) && (
           <>
             {/* 覆盖进度 + 动作 */}
             <div className={`${sectionCard} flex items-center gap-4 px-5 py-3.5`}>
@@ -331,7 +335,7 @@ export default function ProjectDetailPage() {
                 </div>
               </div>
               <div className="flex shrink-0 gap-2">
-                <Btn variant="secondary" onClick={() => setViewPhase(2)}>
+                <Btn variant="secondary" onClick={() => setViewStep(4)}>
                   <Sparkles size={14} strokeWidth={1.8} />
                   去采购清单生成合同
                 </Btn>
@@ -446,7 +450,7 @@ export default function ProjectDetailPage() {
           </>
         )}
 
-        {phase === 4 && (
+        {step === 7 && (
           <div className={`${sectionCard} flex max-w-[860px] flex-col gap-3.5 px-5 py-4.5`}>
             <div className="flex items-center gap-2.5">
               <Archive size={17} strokeWidth={1.8} className="text-ink-2" />

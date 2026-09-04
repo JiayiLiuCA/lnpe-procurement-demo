@@ -20,8 +20,6 @@ export function contractSubPill(c: Contract, partialArrived: boolean): { tone: P
       return { tone: "ai", text: "待校对" };
     case "finalized":
       return { tone: "warning", text: "待签订" };
-    case "signed":
-      return { tone: "info", text: "已签订" };
     case "executing": {
       if (c.deliveryDate) {
         const d = daysUntil(c.deliveryDate);

@@ -168,7 +168,7 @@ export default function SuppliersPage() {
                                 <span className="w-44 shrink-0 font-medium tabular-nums">{c.no}</span>
                                 <span className="text-sub w-24 shrink-0 text-xs tabular-nums">{p?.code}</span>
                                 <span className="min-w-0 flex-1 truncate">{c.summary}</span>
-                                <StatusPill tone={c.status === "closed" ? "neutral" : c.status === "ai_draft" ? "ai" : c.status === "executing" || c.status === "signed" ? "info" : c.status === "arrived" || c.status === "warranty" ? "success" : "warning"}>
+                                <StatusPill tone={c.status === "closed" ? "neutral" : c.status === "ai_draft" ? "ai" : c.status === "executing" ? "info" : c.status === "arrived" || c.status === "warranty" ? "success" : "warning"}>
                                   {CONTRACT_STATUS_LABEL[c.status]}
                                 </StatusPill>
                                 <span className="w-28 shrink-0 text-right font-medium tabular-nums">{total != null ? `¥${fmtNum(total)}` : "待补充"}</span>

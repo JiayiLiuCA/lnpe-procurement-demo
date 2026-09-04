@@ -18,7 +18,6 @@ const STATUS_FILTERS: (ContractStatus | "all")[] = [
   "ai_draft",
   "reviewing",
   "finalized",
-  "signed",
   "executing",
   "arrived",
   "warranty",

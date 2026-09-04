@@ -82,7 +82,7 @@ function laborRatioOf(section: Part["section"], key: MaterialKey): number {
 }
 
 /** 已签（含执行中/到货/质保/完结）的合同才算真实采购价 */
-const SIGNED = new Set<Contract["status"]>(["signed", "executing", "arrived", "warranty", "closed"]);
+const SIGNED = new Set<Contract["status"]>(["executing", "arrived", "warranty", "closed"]);
 
 export function buildParts(checklists: Checklist[], contracts: Contract[]): Part[] {
   const map = new Map<string, Part>();

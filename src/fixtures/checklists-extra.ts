@@ -154,7 +154,7 @@ const cl260706: Checklist = {
   ],
 };
 
-// 260227 鄂尔多斯空压机系统：6 行 = 2 全分配 + 4 需采购（3 入 c-kaishan-1、1 未生成）
+// 260227 鄂尔多斯空压机系统：6 行 = 3 全分配 + 3 需采购（全部入 c-kaishan-1，覆盖 100%，项目停在交货跟进）
 const cl260227: Checklist = {
   id: "cl-260227-1",
   projectId: "p-260227",
@@ -221,7 +221,7 @@ const cl260227: Checklist = {
           unit: "米",
           brands: "特变电工/远东",
           techNote: "随空压机高压电机配套敷设；到货前完成桥架施工。",
-          st: "n",
+          st: "a",
         },
         {
           name: "地脚螺栓组",
@@ -237,7 +237,7 @@ const cl260227: Checklist = {
   ],
 };
 
-// 260209 德阳金山分级机改造：8 行 = 2 全分配 + 6 需采购（4 入 c-jiaxin、2 未生成）
+// 260209 德阳金山分级机改造：8 行 = 4 全分配 + 4 需采购（全部入 c-jiaxin，覆盖 100%，项目停在现场收货）
 const cl260209: Checklist = {
   id: "cl-260209-1",
   projectId: "p-260209",
@@ -323,7 +323,7 @@ const cl260209: Checklist = {
           qty: 24,
           unit: "件",
           techNote: "硬度 HRC≥58；配沉头螺栓安装孔。",
-          st: "n",
+          st: "a",
         },
         {
           name: "密封件包",
@@ -332,14 +332,14 @@ const cl260209: Checklist = {
           qty: 1,
           unit: "批",
           techNote: "含骨架油封、O 圈与盘根，按图纸清单配齐。",
-          st: "n",
+          st: "a",
         },
       ]),
     },
   ],
 };
 
-// 251230 乐山协鑫二期：8 行 = 2 全分配 + 6 需采购（5 入 c-hongtai、1 未生成）
+// 251230 乐山协鑫二期：8 行 = 3 全分配 + 5 需采购（全部入 c-hongtai，覆盖 100%，项目停在现场收货）
 const cl251230: Checklist = {
   id: "cl-251230-1",
   projectId: "p-251230",
@@ -436,7 +436,7 @@ const cl251230: Checklist = {
           unit: "桶",
           brands: "立邦/佐敦",
           techNote: "现场补漆用；含稀释剂。",
-          st: "n",
+          st: "a",
         },
       ]),
     },

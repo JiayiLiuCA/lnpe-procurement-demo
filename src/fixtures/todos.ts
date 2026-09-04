@@ -1,16 +1,7 @@
 import type { Todo } from "@/lib/types";
 
-// 照抄工作台设计稿的 5 条待办
+// 工作台待办（清单审核 / AI 初稿 / 付款临期 / 交货逾期 / 收货异常 各一条）
 export const todos: Todo[] = [
-  {
-    id: "t-1",
-    kind: "review",
-    pillText: "清单审核",
-    title: "20260510 二粉(2) 第一批采购清单",
-    sub: "制表 肖济忠 · 08-19 提交",
-    actionLabel: "去审核",
-    href: "/projects/p-20260510?phase=2",
-  },
   {
     id: "t-cl-260706",
     kind: "review",
@@ -18,7 +9,7 @@ export const todos: Todo[] = [
     title: "260706 磷酸铁锂二粉线 第一批采购清单",
     sub: "制表 肖济忠 · 08-14 提交 · 待核对 5 项",
     actionLabel: "去审核",
-    href: "/projects/p-260706?phase=2",
+    href: "/projects/p-260706?step=2",
   },
   {
     id: "t-2",
