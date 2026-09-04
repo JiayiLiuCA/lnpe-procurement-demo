@@ -22,45 +22,6 @@ function v(id: string, name: string, at: string, by: string, extra?: Partial<Ver
 
 export const contracts: Contract[] = [
   {
-    id: "c-kaishan-1",
-    no: "LNPE-20260312030-SJ",
-    projectId: "p-260227",
-    supplierId: "s-kaishan",
-    summary: "离心式空压机 12 套",
-    status: "executing",
-    signedAt: "2026-03-12",
-    deliveryDate: "2026-05-30",
-    amountInclTax: 7392000,
-    taxRate: 0.13,
-    lines: [
-      {
-        id: "l-k1-1",
-        name: "离心式空压机",
-        spec: "H1000-5.5L（T1500-2S）",
-        unit: "套",
-        qty: 12,
-        unitPrice: 530000,
-        note: "260227项目用；流量≥205m³/min，P=0.55MPa，功率1000kW，10KV 高压电机；无油认证（ISO 8573-1 Class 0）；含进气过滤、干燥净化后处理与就地控制柜；随机附出厂试验报告与性能曲线。",
-      },
-      { id: "l-k1-2", name: "离心空压机外壳", spec: "T1500-2S 配套", unit: "套", qty: 12, unitPrice: 80000, note: "260227项目用；碳钢喷塑，带隔音、通风散热功能" },
-      { id: "l-k1-3", name: "消音器", spec: "T1500-2S 配套", unit: "套", qty: 12, unitPrice: 6000, note: "260227项目用" },
-    ],
-    milestones: [
-      ms("M1", 0.1, "paid", { paidAt: "2026-03-13", invoice: { no: "NO.04482913", ratioLabel: "10%", amount: 739200, receivedAt: "2026-03-15" } }),
-      ms("M2", 0.5, "paid", { paidAt: "2026-05-28", invoice: { no: "NO.04517206", ratioLabel: "50%", amount: 3696000, receivedAt: "2026-05-31" } }),
-      ms("M3", 0.3, "pending"),
-      ms("M4", 0.1, "not_started"),
-    ],
-    versions: [
-      v("v1", "v1 AI 初稿", "2026-03-10", "按标准模板生成", { ai: true }),
-      v("v2", "v2 人工修订", "2026-03-10", "赵小燕 在线编辑"),
-      v("v3", "v3 定稿（双方盖章版）", "2026-03-11", "赵小燕 上传", { final: true }),
-    ],
-    attachments: ["技术协议（签章版）.pdf", "发票 NO.04482913.pdf", "发票 NO.04517206.pdf"],
-    sellerContactName: "唐毅",
-    sellerContactPhone: "13677626727",
-  },
-  {
     id: "c-fengjie",
     no: "LNPE-20260601008-SJ",
     projectId: "p-20260510",
@@ -224,37 +185,6 @@ export const contracts: Contract[] = [
     attachments: [],
     sellerContactName: "刘瑞",
     sellerContactPhone: "13908177342",
-  },
-  {
-    id: "c-jiaxin",
-    no: "LNPE-XY20260307-05",
-    projectId: "p-260209",
-    supplierId: "s-jiaxin",
-    summary: "分级机部件外协加工 4 项",
-    status: "executing",
-    signedAt: "2026-03-12",
-    deliveryDate: "2026-06-05",
-    amountInclTax: 510000,
-    taxRate: 0.13,
-    lines: [
-      { id: "l-j-1", name: "360分级机收料仓", spec: "LNC-3601-07-04", unit: "件", qty: 1, unitPrice: 58000, note: "304；详见图纸；内壁抛光 Ra≤0.8" },
-      { id: "l-j-2", name: "配套法兰", spec: "LNC-3601-05", unit: "件", qty: 4, unitPrice: 3500, note: "304；密封面车削" },
-      { id: "l-j-3", name: "360分级机筒体", spec: "LNC-3601-06-01", unit: "件", qty: 4, unitPrice: 76000, note: "304；详见图纸；焊缝酸洗钝化" },
-      { id: "l-j-4", name: "260分级机收料仓", spec: "LNC2601-14-01", unit: "件", qty: 5, unitPrice: 26800, note: "304；详见图纸" },
-    ],
-    milestones: [
-      ms("M1", 0.1, "paid", { paidAt: "2026-03-15" }),
-      ms("M2", 0.5, "paid", { paidAt: "2026-05-20" }),
-      ms("M3", 0.3, "due", { dueAt: "2026-08-23" }),
-      ms("M4", 0.1, "not_started"),
-    ],
-    versions: [
-      v("v1", "v1 AI 初稿", "2026-03-10", "按标准模板生成", { ai: true }),
-      v("v2", "v2 定稿（双方盖章版）", "2026-03-12", "赵小燕 上传", { final: true }),
-    ],
-    attachments: ["加工图纸包（签章）.pdf"],
-    sellerContactName: "何嘉",
-    sellerContactPhone: "13990263318",
   },
   // 已结束项目 251102 的合同（已完结，全额付清并开票）
   {

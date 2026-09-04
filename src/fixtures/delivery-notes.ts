@@ -2,25 +2,21 @@ import type { DeliveryNote } from "@/lib/types";
 import { RECEIVER } from "./suppliers";
 
 export const deliveryNotes: DeliveryNote[] = [
-  // 核心：06-09 送货单，7 行 63 件（正常 6 项共 23 件 = 63 − 40）
+  // 核心：06-09 送货单（宏泰），3 行 49 件（正常 2 项共 9 件 = 49 − 40）
   {
     id: "d-0609",
     date: "2026-06-09",
-    fromName: "德阳嘉信机械加工有限公司 / 四川宏泰钣金制造有限公司",
-    projectIds: ["p-260209", "p-251230"],
-    contractIds: ["c-jiaxin", "c-hongtai"],
+    fromName: "四川宏泰钣金制造有限公司",
+    projectIds: ["p-251230"],
+    contractIds: ["c-hongtai"],
     receiverName: RECEIVER.name,
     receiverPhone: RECEIVER.phone,
     receiverAddress: RECEIVER.address,
     status: "in_progress",
     headerPhoto: true,
     lines: [
-      { seq: 1, name: "360分级机收料仓", spec: "LNC-3601-07-04", qty: 1, unit: "件", packaging: "布", projectCode: "260209", contractId: "c-jiaxin", state: "confirmed", confirmedAt: "08:32", photoCount: 2 },
-      { seq: 2, name: "配套法兰", spec: "LNC-3601-05", qty: 4, unit: "件", packaging: "布", projectCode: "260209", contractId: "c-jiaxin", state: "confirmed", confirmedAt: "08:41", photoCount: 1 },
-      { seq: 3, name: "360分级机筒体", spec: "LNC-3601-06-01", qty: 4, unit: "件", packaging: "布", projectCode: "260209", contractId: "c-jiaxin", state: "unconfirmed", photoCount: 1 },
-      { seq: 4, name: "260分级机收料仓", spec: "LNC2601-14-01", qty: 5, unit: "件", packaging: "布", projectCode: "260209", contractId: "c-jiaxin", state: "unconfirmed", photoCount: 0 },
       {
-        seq: 5,
+        seq: 1,
         name: "配套法兰（圆）",
         spec: "LNC-3601-03",
         qty: 40,
@@ -32,8 +28,8 @@ export const deliveryNotes: DeliveryNote[] = [
         photoCount: 3,
         exception: { type: "数量不符", actualQty: 36, note: "缺 4 片，已联系司机核对，照片已留存" },
       },
-      { seq: 6, name: "360分级机排料斗", spec: "LNC3606-14-01", qty: 3, unit: "件", packaging: "布", projectCode: "251230", contractId: "c-hongtai", state: "unconfirmed", photoCount: 0 },
-      { seq: 7, name: "560分级机排料斗", spec: "LNC-560-1-08-1-C", qty: 6, unit: "件", packaging: "布", projectCode: "251230", contractId: "c-hongtai", state: "unconfirmed", photoCount: 0 },
+      { seq: 2, name: "360分级机排料斗", spec: "LNC3606-14-01", qty: 3, unit: "件", packaging: "布", projectCode: "251230", contractId: "c-hongtai", state: "unconfirmed", photoCount: 0 },
+      { seq: 3, name: "560分级机排料斗", spec: "LNC-560-1-08-1-C", qty: 6, unit: "件", packaging: "布", projectCode: "251230", contractId: "c-hongtai", state: "unconfirmed", photoCount: 0 },
     ],
   },
   // 锋杰 · 今日到货

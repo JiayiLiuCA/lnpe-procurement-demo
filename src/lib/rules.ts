@@ -18,7 +18,7 @@ export function dueTone(dueAt: string): DueTone {
 
 /**
  * 到货后填充 M3/M4 期限：M3 dueAt ??= 到货 +12 月、M4 dueAt ??= 到货 +24 月。
- * 只在为空时填充（c-jiaxin 的 M3 08-23 不被覆盖）。
+ * 只在为空时填充（种子里已写明的 M3 / M4 期限不被覆盖）。
  */
 export function deriveArrivalDeadlines(milestones: Milestone[], arrivedAt: string): Milestone[] {
   return milestones.map((m) => {
