@@ -120,11 +120,10 @@ export default function ProjectDetailPage() {
   const projectPlan = paymentPlan(contracts);
 
   // 送货单与本项目相关的行
-  const pNotes = [...projectDeliveryNotes(project, allContracts, deliveryNotes)].sort((a, b) => b.date.localeCompare(a.date));
-  const linesOf = (n: DeliveryNote) => n.lines.filter((l) => l.projectCode === project.code || contracts.some((c) => c.id === l.contractId));
-  const excOpen = pNotes.reduce((s, n) => s + linesOf(n).filter((l) => l.state === "exception" && !l.exception?.resolvedAt).length, 0);
+  const pNotes = [...projectDeliveryNotes(project, deliveryNotes)].sort((a, b) => b.date.localeCompare(a.date));
+  const excOpen = pNotes.reduce((s, n) => s + n.lines.filter((l) => l.state === "exception" && !l.exception?.resolvedAt).length, 0);
   const closedContracts = contracts.filter((c) => c.status === "closed").length;
-  const partialArrived = (c: Contract) => deliveryNotes.some((n) => n.contractIds.includes(c.id) && n.status === "in_progress");
+  const partialArrived = (c: Contract) => deliveryNotes.some((n) => n.contractId === c.id && n.status === "in_progress");
 
   const batchTabs =
     checklists.length > 1 ? (
@@ -152,8 +151,8 @@ export default function ProjectDetailPage() {
   // 本步工作条：承接 / 本步 / 产出 + 本步关键数字 + 主按钮。数字按步筛选；订货安排 / 子合同两步的数字工作区条带里已有，不重复
   // 与 lib/steps 的第 6 步小字同口径：只算已开始收货（in_progress / done）的送货单行，处理过（确认或异常）算一项
   const startedNotes = pNotes.filter((n) => n.status !== "pending");
-  const recvTotal = startedNotes.reduce((s, n) => s + linesOf(n).length, 0);
-  const recvDone = startedNotes.reduce((s, n) => s + linesOf(n).filter((l) => l.state !== "unconfirmed").length, 0);
+  const recvTotal = startedNotes.reduce((s, n) => s + n.lines.length, 0);
+  const recvDone = startedNotes.reduce((s, n) => s + n.lines.filter((l) => l.state !== "unconfirmed").length, 0);
   const approvedCls = checklists.filter((c) => c.status === "已批准").length;
   const paidPct = signedTotal > 0 ? `${((paid / signedTotal) * 100).toFixed(1)}%` : "—";
   const payTerm = latestTerms.find((k) => k.label === "付款节点")?.value;
@@ -460,7 +459,7 @@ export default function ProjectDetailPage() {
             {pNotes.length > 0 ? (
               <div className={sectionCard}>
                 {pNotes.map((n, i) => {
-                  const lines = linesOf(n);
+                  const lines = n.lines;
                   const processed = lines.filter((l) => l.state !== "unconfirmed").length;
                   const pieces = lines.reduce((s, l) => s + l.qty, 0);
                   const excs = lines.filter((l) => l.state === "exception");
@@ -471,8 +470,7 @@ export default function ProjectDetailPage() {
                         <Truck size={15} strokeWidth={1.8} className="text-sub shrink-0" />
                         <span className="font-medium">送货单 {fmtDate(n.date)}</span>
                         <span className="text-sub min-w-0 flex-1 truncate text-[12.5px]">
-                          {n.fromName} · 本项目 {lines.length} 类 {pieces} 件 · 收货人 {n.receiverName}
-                          {n.projectIds.length > 1 && " · 跨项目送货单"}
+                          {n.fromName} · 合同 {contracts.find((c) => c.id === n.contractId)?.no ?? "—"} · {lines.length} 类 {pieces} 件 · 收货人 {n.receiverName}
                         </span>
                         <NoteStatus n={n} processed={processed} total={lines.length} />
                       </div>

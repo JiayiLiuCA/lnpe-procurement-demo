@@ -140,8 +140,8 @@ export default function ReceiptsPage() {
                     <div className="w-[110px] font-bold tabular-nums">{n.date}</div>
                     <div className="min-w-0 flex-1 truncate pr-3">{n.fromName}</div>
                     <div className="w-[200px]">
-                      <div className="tabular-nums">{n.projectIds.map(codeOf).join(" · ")}</div>
-                      <div className="text-sub truncate text-[11px] tabular-nums">{n.contractIds.map((c) => `…${contractNo(c).slice(-12)}`).join(" · ")}</div>
+                      <div className="tabular-nums">{codeOf(n.projectId)}</div>
+                      <div className="text-sub truncate text-[11px] tabular-nums">…{contractNo(n.contractId).slice(-12)}</div>
                     </div>
                     <div className="w-[110px] tabular-nums">
                       {n.lines.length} 类 <span className="text-sub">{st.pieces} 件</span>
@@ -182,8 +182,6 @@ export default function ReceiptsPage() {
                         <div className="w-10">序号</div>
                         <div className="flex-1">名称 / 规格</div>
                         <div className="w-20">数量</div>
-                        <div className="w-24">项目</div>
-                        <div className="w-40">合同</div>
                         <div className="w-32">确认</div>
                         <div className="w-16 text-right">照片</div>
                       </div>
@@ -196,12 +194,6 @@ export default function ReceiptsPage() {
                           </div>
                           <div className="w-20 tabular-nums">
                             {l.qty} {l.unit}
-                          </div>
-                          <div className="text-ink-2 w-24 tabular-nums">{l.projectCode}</div>
-                          <div className="w-40">
-                            <Link href={`/contracts/${l.contractId}`} className="text-info-deep text-xs tabular-nums">
-                              …{contractNo(l.contractId).slice(-14)}
-                            </Link>
                           </div>
                           <div className="w-32">
                             {l.state === "confirmed" ? (

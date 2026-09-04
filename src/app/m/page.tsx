@@ -111,12 +111,8 @@ export default function MobileTasksPage() {
             <div className="border-line-soft flex flex-col gap-2 rounded-[10px] border bg-[#FBFAF9] px-3.5 py-3">
               <div className="text-[13px] font-bold">送货单 · {deliveryScan.date}</div>
               <div className="flex flex-wrap gap-1.5">
-                {deliveryScan.projectCodes.map((p) => (
-                  <span key={p} className="bg-line-soft text-ink-2 rounded-md px-2 py-0.5 text-[11.5px] font-medium">
-                    项目 {p}
-                  </span>
-                ))}
-                <span className="bg-line-soft text-ink-2 rounded-md px-2 py-0.5 text-[11.5px]">合同 {deliveryScan.contractCount} 份</span>
+                <span className="bg-line-soft text-ink-2 rounded-md px-2 py-0.5 text-[11.5px] font-medium">项目 {deliveryScan.projectCode}</span>
+                <span className="bg-line-soft text-ink-2 rounded-md px-2 py-0.5 text-[11.5px] tabular-nums">合同 {deliveryScan.contractNo}</span>
                 <span className="bg-line-soft text-ink-2 rounded-md px-2 py-0.5 text-[11.5px]">收货人 {deliveryScan.receiver}</span>
               </div>
             </div>
@@ -125,8 +121,6 @@ export default function MobileTasksPage() {
                 <div className="flex-1">名称 / 规格</div>
                 <div className="w-14">数量</div>
                 <div className="w-10">包装</div>
-                <div className="w-14">项目</div>
-                <div className="w-24">合同</div>
               </div>
               {deliveryScan.lines.map((l) => (
                 <div key={l.spec} className="border-page flex items-center border-b px-3 py-1.75 text-xs last:border-b-0">
@@ -136,8 +130,6 @@ export default function MobileTasksPage() {
                   </div>
                   <div className="w-14 tabular-nums">{l.qty}</div>
                   <div className="w-10">{l.packaging}</div>
-                  <div className="text-sub w-14 tabular-nums">{l.projectCode}</div>
-                  <div className="text-sub w-24 truncate tabular-nums">{l.contractNoTail}</div>
                 </div>
               ))}
             </div>

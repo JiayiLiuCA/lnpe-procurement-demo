@@ -127,7 +127,7 @@ export default function ContractDetailPage() {
   const invRatio = invoicedRatio(c);
   const invCount = c.milestones.filter((m) => m.invoice).length;
   const supplier = supplierById(c.supplierId);
-  const partial = deliveryNotes.some((n) => n.contractIds.includes(c.id) && n.status === "in_progress");
+  const partial = deliveryNotes.some((n) => n.contractId === c.id && n.status === "in_progress");
   const sub = contractSubPill(c, partial);
   const overdue = overdueContracts([c], deliveryNotes).length > 0 ? -daysUntil(c.deliveryDate!) : 0;
   const stage = contractStage(c, deliveryNotes);

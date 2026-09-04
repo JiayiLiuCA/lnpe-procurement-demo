@@ -188,8 +188,6 @@ export interface DeliveryLine {
   qty: number;
   unit: string;
   packaging: "布";
-  projectCode: string;
-  contractId: string;
   state: DeliveryLineState;
   confirmedAt?: string;
   photoCount: number;
@@ -197,12 +195,13 @@ export interface DeliveryLine {
   exception?: { type: "数量不符" | "破损"; actualQty?: number; note: string; resolvedAt?: string };
 }
 
+/** 送货单：一张只对应一个项目下的一份子合同；同车运送跨项目 / 跨合同的货物按多张送货单处理 */
 export interface DeliveryNote {
   id: string;
   date: string;
   fromName: string;
-  projectIds: string[];
-  contractIds: string[];
+  projectId: string;
+  contractId: string;
   receiverName: string;
   receiverPhone: string;
   receiverAddress: string;

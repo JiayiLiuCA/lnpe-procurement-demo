@@ -82,7 +82,7 @@ export default function ContractsPage() {
           {filtered.map((c, i) => {
             const p = projects.find((x) => x.id === c.projectId);
             const total = contractTotal(c);
-            const partial = deliveryNotes.some((n) => n.contractIds.includes(c.id) && n.status === "in_progress");
+            const partial = deliveryNotes.some((n) => n.contractId === c.id && n.status === "in_progress");
             const sub = contractSubPill(c, partial);
             return (
               <button

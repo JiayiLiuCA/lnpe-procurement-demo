@@ -78,7 +78,7 @@ export function overdueContracts(contracts: Contract[], notes: DeliveryNote[]): 
       c.status === "executing" &&
       !!c.deliveryDate &&
       daysUntil(c.deliveryDate) < 0 &&
-      !notes.some((n) => n.contractIds.includes(c.id) && n.status !== "pending"),
+      !notes.some((n) => n.contractId === c.id && n.status !== "pending"),
   );
 }
 

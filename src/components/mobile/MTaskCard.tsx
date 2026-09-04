@@ -40,12 +40,10 @@ export function MTaskCard({ note, onStart, onContinue }: { note: DeliveryNote; o
       {!inProgress && !done && <div className="text-ink-2 text-[13px]">发货方：{note.fromName}</div>}
       <div className="flex flex-wrap gap-1.5">
         <span className="bg-page text-ink-2 rounded-md px-2 py-0.5 text-[11.5px]">
-          项目 {note.projectIds.map((p) => p.replace("p-", "")).join(" / ")}
+          项目 {note.projectId.replace("p-", "")}
         </span>
         <span className="bg-page text-ink-2 rounded-md px-2 py-0.5 text-[11.5px] tabular-nums">
-          {note.contractIds.length > 1
-            ? `合同 ${note.contractIds.length} 份`
-            : `合同 …${(contracts.find((c) => c.id === note.contractIds[0])?.no ?? "").slice(-14)}`}
+          合同 …{(contracts.find((c) => c.id === note.contractId)?.no ?? "").slice(-14)}
         </span>
         <span className="bg-page text-ink-2 rounded-md px-2 py-0.5 text-[11.5px]">
           {kinds} 类 {pieces} 件

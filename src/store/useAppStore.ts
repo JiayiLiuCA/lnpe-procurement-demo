@@ -475,7 +475,7 @@ export const useAppStore = create<AppState>()(
         if (!note) return;
         const excLines = note.lines.filter((l) => l.state === "exception");
         set((st) => {
-          const newActivities: Activity[] = note.projectIds.map((pid, i) => ({
+          const newActivities: Activity[] = [note.projectId].map((pid, i) => ({
             id: `a-r-${noteId}-${st.activities.length + i + 1}`,
             projectId: pid,
             text: `送货单 ${fmtDate(note.date)} 收货完成${excLines.length ? ` · 异常 ${excLines.length} 项` : ""}`,
@@ -494,14 +494,14 @@ export const useAppStore = create<AppState>()(
                     title: `${fmtDate(note.date)} 送货单 · ${excLines[0].name}${excLines[0].exception?.type ?? "异常"}（实收 ${excLines[0].exception?.actualQty ?? "?"}/${excLines[0].qty}）`,
                     sub: `收货人 ${note.receiverName} · 现场已留照片 ${excLines[0].photoCount} 张`,
                     actionLabel: "去处理",
-                    href: `/contracts/${excLines[0].contractId}`,
+                    href: `/contracts/${note.contractId}`,
                   },
                 ]
               : [];
           return {
             deliveryNotes: st.deliveryNotes.map((n) => (n.id !== noteId ? n : { ...n, status: "done" as const })),
             contracts: st.contracts.map((c) =>
-              note.contractIds.includes(c.id)
+              note.contractId === c.id
                 ? {
                     ...c,
                     status: "arrived" as const,
@@ -551,7 +551,7 @@ export const useAppStore = create<AppState>()(
                     lines: n.lines.map((l) => (l.seq === seq && l.exception ? { ...l, exception: { ...l.exception, resolvedAt: TODAY } } : l)),
                   },
             ),
-            todos: s.todos.map((t) => (t.kind === "receive_exception" && t.href.endsWith(line.contractId) ? { ...t, done: true } : t)),
+            todos: s.todos.map((t) => (t.kind === "receive_exception" && t.href.endsWith(note.contractId) ? { ...t, done: true } : t)),
           };
         }),
 
@@ -569,7 +569,7 @@ export const useAppStore = create<AppState>()(
       name: "lnpe-demo-v2",
       // 数据结构/种子内容变更时递增：版本不匹配的旧 localStorage 会被直接丢弃（回到种子数据），
       // 避免旧结构（如 orderContract 顶层 keyTerms、缺 versions[].keyTerms）rehydrate 后覆盖新种子导致运行时崩溃
-      version: 13,
+      version: 14,
       storage: createJSONStorage(() => localStorage),
       skipHydration: true,
       partialize: (s) =>

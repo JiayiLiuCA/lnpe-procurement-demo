@@ -13,7 +13,7 @@ export function ReceivingRecord({ contract }: { contract: Contract }) {
   const notes = useAppStore((s) => s.deliveryNotes);
   const resolveException = useAppStore((s) => s.resolveException);
   const pushToast = useAppStore((s) => s.pushToast);
-  const related = notes.filter((n) => n.contractIds.includes(contract.id) && n.status !== "pending");
+  const related = notes.filter((n) => n.contractId === contract.id && n.status !== "pending");
 
   if (related.length === 0) {
     return (
@@ -27,7 +27,7 @@ export function ReceivingRecord({ contract }: { contract: Contract }) {
   return (
     <div className="flex flex-col gap-3.5">
       {related.map((n) => {
-        const lines = n.lines.filter((l) => l.contractId === contract.id);
+        const lines = n.lines;
         const photoTotal = lines.reduce((s, l) => s + l.photoCount, 0);
         const excs = lines.filter((l) => l.state === "exception");
         return (

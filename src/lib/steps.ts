@@ -66,7 +66,7 @@ export function contractStage(c: Contract, notes: DeliveryNote[]): ContractStage
   if (c.status === "closed") return "closed";
   if (c.status === "arrived" || c.status === "warranty") return "settling";
   if (c.status === "executing") {
-    return notes.some((n) => n.contractIds.includes(c.id) && n.status === "in_progress") ? "receiving" : "delivering";
+    return notes.some((n) => n.contractId === c.id && n.status === "in_progress") ? "receiving" : "delivering";
   }
   return "draft";
 }
@@ -77,10 +77,9 @@ export function isSignedContract(c: Contract): boolean {
 
 /* ------------------------------------------------------------------ 项目步骤 */
 
-/** 与项目相关的送货单：按项目号或按其子合同关联（一张送货单可跨项目） */
-export function projectDeliveryNotes(project: Project, contracts: Contract[], notes: DeliveryNote[]): DeliveryNote[] {
-  const list = projectContracts(contracts, project.id);
-  return notes.filter((n) => n.projectIds.includes(project.id) || n.contractIds.some((cid) => list.some((c) => c.id === cid)));
+/** 本项目的送货单：一张送货单只对应一个项目下的一份子合同 */
+export function projectDeliveryNotes(project: Project, notes: DeliveryNote[]): DeliveryNote[] {
+  return notes.filter((n) => n.projectId === project.id);
 }
 
 export function projectProgress(project: Project, checklists: Checklist[], contracts: Contract[], notes: DeliveryNote[]): ProjectProgress {
@@ -107,11 +106,11 @@ export function projectProgress(project: Project, checklists: Checklist[], contr
   const signed = list.length - drafts;
   const settlingPlus = stages.filter((s) => s === "settling" || s === "closed").length;
   const overdue = overdueContracts(list, notes);
-  const pNotes = projectDeliveryNotes(project, contracts, notes);
+  const pNotes = projectDeliveryNotes(project, notes);
   // 只统计已开始收货（in_progress / done）的送货单行；卖方刚发出、还没到场的只报「待收货 n 张」
   const myLines = pNotes
     .filter((n) => n.status !== "pending")
-    .flatMap((n) => n.lines.filter((l) => l.projectCode === project.code || list.some((c) => c.id === l.contractId)));
+    .flatMap((n) => n.lines);
   const linesDone = myLines.filter((l) => l.state !== "unconfirmed").length;
   const excOpen = myLines.filter((l) => l.state === "exception" && !l.exception?.resolvedAt).length;
   const pendingNotes = pNotes.filter((n) => n.status === "pending").length;

@@ -74,19 +74,8 @@ export default function MobileReceivingPage() {
         {/* 单头信息卡 */}
         <div className="flex flex-col gap-2 rounded-xl bg-white px-3.5 py-3">
           <div className="flex flex-wrap gap-1.5">
-            {note.projectIds.map((p) => (
-              <span key={p} className="bg-line-soft text-ink-2 rounded-md px-2 py-0.5 text-[11.5px] font-medium">
-                项目 {p.replace("p-", "")}
-              </span>
-            ))}
-            {note.contractIds.map((cid) => {
-              const c = contracts.find((x) => x.id === cid);
-              return (
-                <span key={cid} className="bg-page text-ink-2 rounded-md px-2 py-0.5 text-[11.5px] tabular-nums">
-                  {c?.no}
-                </span>
-              );
-            })}
+            <span className="bg-line-soft text-ink-2 rounded-md px-2 py-0.5 text-[11.5px] font-medium">项目 {note.projectId.replace("p-", "")}</span>
+            <span className="bg-page text-ink-2 rounded-md px-2 py-0.5 text-[11.5px] tabular-nums">{contracts.find((x) => x.id === note.contractId)?.no}</span>
           </div>
           <div className="text-sub text-xs">
             收货人 {note.receiverName} · {note.receiverAddress}
@@ -113,7 +102,7 @@ export default function MobileReceivingPage() {
           <MReceiveLineCard
             key={l.seq}
             line={l}
-            contractNoTail={tailFor(l.contractId)}
+            contractNoTail={tailFor(note.contractId)}
             isCurrent={l.seq === currentSeq}
             onConfirm={() => confirmDeliveryLine(note.id, l.seq)}
             onException={() => setExcLine(l)}
@@ -140,7 +129,7 @@ export default function MobileReceivingPage() {
             <MReceiveLineCard
               key={`rest-${l.seq}`}
               line={l}
-              contractNoTail={tailFor(l.contractId)}
+              contractNoTail={tailFor(note.contractId)}
               isCurrent={false}
               onConfirm={() => confirmDeliveryLine(note.id, l.seq)}
               onException={() => setExcLine(l)}

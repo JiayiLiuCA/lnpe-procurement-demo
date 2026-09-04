@@ -39,7 +39,7 @@ export default function SuppliersPage() {
       const drafts = list.filter((c) => c.status === "ai_draft" || c.status === "reviewing" || c.status === "finalized").length;
       const overdue = overdueContracts(list, deliveryNotes);
       const ids = new Set(list.map((c) => c.id));
-      const exceptions = deliveryNotes.flatMap((n) => n.lines.filter((l) => ids.has(l.contractId) && l.state === "exception"));
+      const exceptions = deliveryNotes.flatMap((n) => (ids.has(n.contractId) ? n.lines.filter((l) => l.state === "exception") : []));
       const mine = purchases.filter((h) => h.supplier === s.short).sort((a, b) => b.date.localeCompare(a.date));
       const recent = mine.filter((h) => h.date >= YEAR_AGO);
       const categories = [...new Set([...list.flatMap((c) => c.lines.map((l) => l.name)), ...mine.map((h) => h.part.name)])];
