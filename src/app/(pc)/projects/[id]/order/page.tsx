@@ -1,6 +1,6 @@
 "use client";
 
-// 订单合同（总合同）页：查看条款、版本记录、更新版本、下载 xlsx
+// 项目合同页：查看条款、版本记录、更新版本、下载 xlsx
 import { useParams } from "next/navigation";
 import { Download, UploadCloud } from "lucide-react";
 import { Topbar, Crumb, CrumbLink } from "@/components/shell/Topbar";
@@ -37,7 +37,7 @@ export default function OrderContractPage() {
         crumbs={
           <>
             <CrumbLink href="/projects">项目管理</CrumbLink> / <CrumbLink href={`/projects/${project.id}`}>{project.code}</CrumbLink> /{" "}
-            <Crumb>订单合同</Crumb>
+            <Crumb>项目合同</Crumb>
           </>
         }
         actions={
@@ -59,7 +59,7 @@ export default function OrderContractPage() {
               onChange={(e) => {
                 if (e.target.files?.length) {
                   addOrderContractVersion(project.id);
-                  pushToast(`订单合同已更新：v${oc.versions.length + 1}`);
+                  pushToast(`项目合同已更新：v${oc.versions.length + 1}`);
                   e.target.value = "";
                 }
               }}

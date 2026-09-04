@@ -1,4 +1,4 @@
-// AI 流程 1：订单合同解析结果（开山 · 幂等 upsert 到项目 260227 与 c-kaishan-1）
+// AI 流程 1：项目合同解析结果（开山 · 幂等 upsert 到项目 260227 与 c-kaishan-1）
 export const orderParse = {
   contractNo: "LNPE-20260312030-SJ",
   buyer: "绵阳流能粉体设备有限公司",

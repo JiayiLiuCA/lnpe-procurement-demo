@@ -541,7 +541,7 @@ export const useAppStore = create<AppState>()(
       name: "lnpe-demo-v2",
       // 数据结构/种子内容变更时递增：版本不匹配的旧 localStorage 会被直接丢弃（回到种子数据），
       // 避免旧结构（如缺 keyTerms 的 orderContract）rehydrate 后覆盖新种子导致运行时崩溃
-      version: 10,
+      version: 11,
       storage: createJSONStorage(() => localStorage),
       skipHydration: true,
       partialize: (s) =>

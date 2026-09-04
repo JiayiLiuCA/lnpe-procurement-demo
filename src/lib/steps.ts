@@ -129,7 +129,7 @@ export function projectProgress(project: Project, checklists: Checklist[], contr
   const current: StepNo | null = closed ? null : (STEP_NOS.find((n) => !done[n]) ?? 7);
 
   const notesByStep: Record<StepNo, string> = {
-    1: "总合同已入库",
+    1: "项目合同已入库",
     2: cls.length === 0 ? "待技术部提供清单" : approved < cls.length ? `审核 ${approved}/${cls.length} 批` : `已批准 ${cls.length} 批`,
     3: st.pending > 0 ? `待核对 ${st.pending} 项` : `库存 ${st.allocated} · 生产 ${st.produce} · 采购 ${st.need}`,
     4: `覆盖 ${st.contracted}/${st.need}${drafts > 0 ? ` · 待签 ${drafts} 份` : signed > 0 ? ` · 已签 ${signed} 份` : ""}`,

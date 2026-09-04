@@ -159,7 +159,7 @@ export default function ProjectDetailPage() {
   const seedOc = seedProjects.find((p) => p.id === project.id)?.orderContract;
   const baseOc = project.orderContract ?? seedOc;
   const oc: OrderContract = {
-    fileName: baseOc?.fileName ?? `${project.code}订单合同.xlsx`,
+    fileName: baseOc?.fileName ?? `${project.code}项目合同.xlsx`,
     no: baseOc?.no ?? `LN-${project.code}`,
     customer: baseOc?.customer ?? "—",
     signedAt: baseOc?.signedAt ?? project.orderedAt,
@@ -228,11 +228,11 @@ export default function ProjectDetailPage() {
     switch (step) {
       case 1:
         return {
-          from: "客户订单合同 xlsx",
+          from: "客户签章的项目合同 xlsx",
           task: "建档，核对 AI 抓取的重要条目与付款节点",
           to: "技术部据此编制采购清单",
           facts: [
-            { label: "订单金额", value: <Money value={oc.amountInclTax} /> },
+            { label: "合同金额", value: <Money value={oc.amountInclTax} /> },
             {
               label: "交货截止",
               value: `${oc.deliveryDeadline}${project.closedAt ? "" : deadlineDays < 0 ? ` · 逾期 ${-deadlineDays} 天` : ` · 剩 ${deadlineDays} 天`}`,
@@ -243,7 +243,7 @@ export default function ProjectDetailPage() {
         };
       case 2:
         return {
-          from: "订单合同已入库",
+          from: "项目合同已入库",
           task: "上传技术部采购清单，AI 解析后人工校对、审核、批准；可分批",
           to: "批准后进入订货安排",
           facts:
@@ -360,7 +360,7 @@ export default function ProjectDetailPage() {
           <Link href={`/projects/${project.id}/order`}>
             <Btn variant="secondary">
               <FileText size={14} strokeWidth={1.8} />
-              订单合同
+              项目合同
             </Btn>
           </Link>
         }
@@ -406,7 +406,7 @@ export default function ProjectDetailPage() {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2.5">
-                  <div className="text-[15px] font-bold">订单合同（总合同）</div>
+                  <div className="text-[15px] font-bold">项目合同</div>
                   <StatusPill tone="success">已签章</StatusPill>
                   <div className="text-sub text-xs">
                     {oc.fileName} · 版本 {oc.versions.length} 个
@@ -438,7 +438,7 @@ export default function ProjectDetailPage() {
               <div className="flex items-center gap-2.5">
                 <div className="text-sm font-bold">重要条目</div>
                 <AiBadge text="AI 提取" />
-                <span className="text-sub text-xs">自订单合同 xlsx 自动抓取，供快速核对（以签章原件为准）</span>
+                <span className="text-sub text-xs">自项目合同 xlsx 自动抓取，供快速核对（以签章原件为准）</span>
               </div>
               <div className="mt-3.5 grid grid-cols-4 gap-3">
                 {oc.keyTerms.map((k) => (

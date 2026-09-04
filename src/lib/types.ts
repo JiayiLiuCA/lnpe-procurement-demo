@@ -9,7 +9,7 @@ export interface Version {
   final?: boolean;
 }
 
-/** 项目的总合同（客户订单合同 xlsx）：可查看条款、更新版本、下载 */
+/** 项目合同（客户签章的 xlsx）：可查看条款、更新版本、下载 */
 export interface OrderContract {
   fileName: string;
   no: string;

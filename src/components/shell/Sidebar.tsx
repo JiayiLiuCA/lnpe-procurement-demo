@@ -16,7 +16,7 @@ import {
 import { Avatar } from "@/components/ui/Avatar";
 import { useAppStore } from "@/store/useAppStore";
 
-// 采购清单不设独立入口：清单挂在项目（总合同）下，经「项目管理 → 采购清单 / 订货安排 / 子合同」三步进入
+// 采购清单不设独立入口：清单挂在项目合同下，经「项目管理 → 采购清单 / 订货安排 / 子合同」三步进入
 const NAV = [
   { href: "/", label: "工作台", icon: LayoutGrid },
   { href: "/projects", label: "项目管理", icon: Folder },

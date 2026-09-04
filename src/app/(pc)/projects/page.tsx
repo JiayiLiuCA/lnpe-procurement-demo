@@ -1,6 +1,6 @@
 "use client";
 
-// 项目列表 + AI 流程 1：新建项目（上传订单合同）+ 导入已有项目入口（仅演示）
+// 项目列表 + AI 流程 1：新建项目（上传项目合同）+ 导入已有项目入口（仅演示）
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FolderInput, UploadCloud } from "lucide-react";
@@ -117,7 +117,7 @@ export default function ProjectsPage() {
             </Btn>
             <Btn variant="primary" onClick={() => setDialogOpen(true)}>
               <UploadCloud size={14} strokeWidth={1.8} />
-              新建项目（上传订单合同）
+              新建项目（上传项目合同）
             </Btn>
           </div>
         }
@@ -181,7 +181,7 @@ export default function ProjectsPage() {
       <AiSimDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
-        title="订单合同解析"
+        title="项目合同解析"
         steps={orderParse.steps}
         uploadHint="支持 xlsx / pdf / 图片，演示中不读取文件内容"
         renderResult={() => <OrderParseResult />}

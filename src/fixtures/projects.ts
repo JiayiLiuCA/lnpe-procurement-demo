@@ -1,6 +1,6 @@
 import type { Project } from "@/lib/types";
 
-// 订单合同（总合同）的标准条款，订单合同详情页展示用
+// 项目合同的标准条款，项目合同详情页展示用
 export const ORDER_TERMS = [
   {
     title: "第 3 条 · 交货与安装调试",
@@ -35,7 +35,7 @@ function keyTerms(amount: string, delivery: string, scope: string) {
 }
 
 export const projects: Project[] = [
-  // 步骤 2 采购清单：订单合同刚入库，技术部尚未出采购清单（步骤、标签、进展全部由 lib/steps.ts 派生）
+  // 步骤 2 采购清单：项目合同刚入库，技术部尚未出采购清单（步骤、标签、进展全部由 lib/steps.ts 派生）
   {
     id: "p-260812",
     code: "260812",
@@ -44,7 +44,7 @@ export const projects: Project[] = [
     deliveryDeadline: "2026-12-20",
     owner: "赵小燕",
     orderContract: {
-      fileName: "260812订单合同.xlsx",
+      fileName: "260812项目合同.xlsx",
       no: "LB-LN-260812-01",
       customer: "宜宾锂宝新材料有限公司",
       signedAt: "2026-08-12",
@@ -63,7 +63,7 @@ export const projects: Project[] = [
     deliveryDeadline: "2026-11-15",
     owner: "敬宏",
     orderContract: {
-      fileName: "260706订单合同.xlsx",
+      fileName: "260706项目合同.xlsx",
       no: "TF-LN-260706-02",
       customer: "青海泰丰先行锂能科技有限公司",
       signedAt: "2026-07-06",
@@ -84,7 +84,7 @@ export const projects: Project[] = [
     deliveryDeadline: "2026-08-15",
     owner: "赵小燕",
     orderContract: {
-      fileName: "20260510订单合同.xlsx",
+      fileName: "20260510项目合同.xlsx",
       no: "XLX-LN-20260510-01",
       customer: "四川新锂想能源科技有限责任公司",
       signedAt: "2026-05-23",
@@ -102,7 +102,7 @@ export const projects: Project[] = [
     deliveryDeadline: "2026-05-30",
     owner: "赵小燕",
     orderContract: {
-      fileName: "260227订单合同.xlsx",
+      fileName: "260227项目合同.xlsx",
       no: "HN-LN-260227-SJ",
       customer: "鄂尔多斯市汇能煤化工有限公司",
       signedAt: "2026-03-02",
@@ -120,7 +120,7 @@ export const projects: Project[] = [
     deliveryDeadline: "2026-06-05",
     owner: "敬宏",
     orderContract: {
-      fileName: "260209订单合同.xlsx",
+      fileName: "260209项目合同.xlsx",
       no: "JS-LN-260209-02",
       customer: "德阳金山新材料有限公司",
       signedAt: "2026-03-07",
@@ -138,7 +138,7 @@ export const projects: Project[] = [
     deliveryDeadline: "2026-06-30",
     owner: "敬宏",
     orderContract: {
-      fileName: "251230订单合同.xlsx",
+      fileName: "251230项目合同.xlsx",
       no: "XX-LN-251230-06",
       customer: "乐山协鑫新能源科技有限公司",
       signedAt: "2025-12-30",
@@ -161,7 +161,7 @@ export const projects: Project[] = [
     owner: "赵小燕",
     closedAt: "2026-07-31",
     orderContract: {
-      fileName: "251102订单合同.xlsx",
+      fileName: "251102项目合同.xlsx",
       no: "XX-LN-251102-03",
       customer: "乐山协鑫新能源科技有限公司",
       signedAt: "2025-11-02",

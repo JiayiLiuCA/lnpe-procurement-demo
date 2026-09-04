@@ -10,7 +10,7 @@ import { useAppStore } from "@/store/useAppStore";
 const ITEMS = [
   {
     icon: FileSpreadsheet,
-    title: "订单合同（客户签章版）",
+    title: "项目合同（客户签章版）",
     format: "xlsx / pdf",
     required: true,
     desc: "建档依据：项目号、客户、含税金额、交货期与付款条款由 AI 抓取后人工核对",
@@ -92,7 +92,7 @@ export function ImportProjectDialog({ open, onClose }: { open: boolean; onClose:
           </div>
 
           <div className="bg-page text-ink-2 rounded-[10px] px-4 py-3 text-[12.5px] leading-relaxed">
-            仅有订单合同 → 停在「采购清单」，等技术部出清单；含采购清单 → 进入「订货安排」做库存 / 生产 / 采购分派；含已签合同 →
+            仅有项目合同 → 停在「采购清单」，等技术部出清单；含采购清单 → 进入「订货安排」做库存 / 生产 / 采购分派；含已签合同 →
             进入「交货跟进」，付款开票与现场收货从导入的记录之后继续。导入结果先以草稿呈现，人工确认后再入库。
           </div>
           <div className="text-faint text-xs">演示版本：本入口仅展示导入所需资料与去向，不读取文件内容。</div>
