@@ -2,7 +2,7 @@
 
 // 订单接收步：项目合同卡（头信息 + 动作 + 版本记录）+ 重要条目。
 // 每一版上传后都由 AI 抓取重要条目并记在版本上（行里显示「AI 已抓取 n 项 · 日期」）；
-// 点版本行，重要条目切到那一版并高亮它相对上一版的变更。没有合同时是上传入口；
+// 版本行只放状态与变更数，点行后重要条目切到那一版并高亮它相对上一版的变更。没有合同时是上传入口；
 // 上传（签章版首版或补充协议）走统一的 AI 解析弹窗，看过抓取结果再确认入库。
 import { useState } from "react";
 import Link from "next/link";
@@ -296,16 +296,8 @@ export function OrderContractStep({
                       <StatusPill tone="neutral">AI 未抓取</StatusPill>
                     )}
                   </span>
-                  <span className="text-ink-2 flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px]">
-                    {diff.length > 0 ? (
-                      diff.map((ch) => (
-                        <span key={ch.label} className="truncate">
-                          {ch.label} <span className="text-faint line-through">{ch.from}</span> → <span className="text-ink font-medium">{ch.to}</span>
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-faint">{v.final ? "签章原件" : v.aiAt ? "无条款变更" : "—"}</span>
-                    )}
+                  <span className="text-sub min-w-0 flex-1 truncate text-[12.5px]">
+                    {v.final ? "签章原件" : !v.aiAt ? "—" : diff.length > 0 ? `相对 ${prevOf(v)?.id ?? "上一版"} 变更 ${diff.length} 项` : "无条款变更"}
                   </span>
                   <button
                     type="button"
