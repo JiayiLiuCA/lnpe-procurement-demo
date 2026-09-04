@@ -17,7 +17,8 @@ import type {
   Project,
   Todo,
 } from "@/lib/types";
-import { TODAY, addDays, fmtDate } from "@/lib/date";
+import { TODAY, fmtDate } from "@/lib/date";
+import { simulateOrderParse } from "@/lib/orderTerms";
 import { CONTRACT_STATUS_ORDER, deriveArrivalDeadlines } from "@/lib/rules";
 import { projects as seedProjects } from "@/fixtures/projects";
 import { checklist20260510 } from "@/fixtures/checklist-20260510";
@@ -66,13 +67,13 @@ interface AppState {
   /** 人工上传已签合同 xlsx → 勾选 cover 的采购行 → 建合同并更新 coverage */
   uploadContractCover: (checklistId: string, rowIds: string[]) => string | null;
   closeProject: (projectId: string) => void;
+  createProject: (name: string) => string;
   addOrderContractVersion: (projectId: string) => void;
   updateLinePrice: (contractId: string, lineId: string, price: number | null) => void;
   advanceContractStatus: (contractId: string) => void;
   applyFinalizeDiff: (contractId: string) => void;
   registerInvoice: (contractId: string, mKey: MilestoneKey, invoice: Invoice) => void;
   markMilestonePaid: (contractId: string, mKey: MilestoneKey) => void;
-  upsertOrderParse: () => void;
   upsertChecklistParse: () => void;
   confirmDeliveryLine: (noteId: string, seq: number) => void;
   markLineException: (noteId: string, seq: number, exception: NonNullable<DeliveryLine["exception"]>) => void;
@@ -309,35 +310,51 @@ export const useAppStore = create<AppState>()(
         get().pushToast(`项目 ${p.code} 已关闭，信息仍可查看`);
       },
 
-      // 上传项目合同新版（演示：当作一份交货期顺延 30 天的补充协议，AI 抓取变更、同步截止日与重要条目）
+      // 新建项目只要名字：编号按建档日期生成（同日重复加序号），合同在项目页「订单接收」步上传
+      createProject: (name) => {
+        const base = TODAY.slice(2).replace(/-/g, "");
+        const taken = new Set(get().projects.map((p) => p.code));
+        let code = base;
+        for (let i = 2; taken.has(code); i++) code = `${base}-${i}`;
+        const id = `p-${code}`;
+        set((s) => ({
+          projects: [{ id, code, name, orderedAt: TODAY, owner: "赵小燕" }, ...s.projects],
+          activities: [
+            { id: `a-new-${id}`, projectId: id, text: "新建项目建档，待上传项目合同", at: `${fmtDate(TODAY)} · 刚刚`, actor: "赵小燕", tone: "neutral" as const },
+            ...s.activities,
+          ],
+        }));
+        return id;
+      },
+
+      // 上传项目合同（签章版首版或补充协议）：AI 抓取头部字段与重要条目，记为一个版本；截止日以最新版为准
       addOrderContractVersion: (projectId) => {
         const p = get().projects.find((x) => x.id === projectId);
         if (!p) return;
-        const n = p.orderContract.versions.length + 1;
-        const from = p.orderContract.deliveryDeadline;
-        const to = addDays(from, 30);
+        const parsed = simulateOrderParse(p);
+        const first = !p.orderContract;
+        const summary = parsed.diff.map((d) => `${d.label} ${d.from} → ${d.to}`).join("、");
         set((s) => ({
-          projects: s.projects.map((x) => {
-            if (x.id !== projectId) return x;
-            return {
-              ...x,
-              deliveryDeadline: to,
-              orderContract: {
-                ...x.orderContract,
-                deliveryDeadline: to,
-                keyTerms: x.orderContract.keyTerms.map((k) => (k.label === "交货期" ? { ...k, value: to } : k)),
-                versions: [
-                  ...x.orderContract.versions,
-                  { id: `v${n}`, name: `v${n} 补充协议（交货期顺延）`, at: TODAY, by: "赵小燕 上传", changes: [{ label: "交货期", from, to }] },
-                ],
-              },
-            };
-          }),
+          projects: s.projects.map((x) =>
+            x.id !== projectId
+              ? x
+              : {
+                  ...x,
+                  deliveryDeadline: parsed.header.deliveryDeadline,
+                  orderContract: {
+                    fileName: x.orderContract?.fileName ?? parsed.fileName,
+                    ...parsed.header,
+                    versions: [...(x.orderContract?.versions ?? []), parsed.version],
+                  },
+                },
+          ),
           activities: [
             {
-              id: `a-oc-${projectId}-v${n}`,
+              id: `a-oc-${projectId}-${parsed.version.id}`,
               projectId,
-              text: `项目合同 v${n} 补充协议入库，AI 抓取到交货期 ${from} → ${to}`,
+              text: first
+                ? `项目合同 ${parsed.version.id} 客户签章版入库，AI 抓取 ${parsed.version.keyTerms.length} 项重要条目`
+                : `项目合同 ${parsed.version.id} 补充协议入库，AI 抓取到 ${summary || "无条款变更"}`,
               at: `${fmtDate(TODAY)} · 刚刚`,
               actor: "赵小燕",
               tone: "neutral" as const,
@@ -345,7 +362,7 @@ export const useAppStore = create<AppState>()(
             ...s.activities,
           ],
         }));
-        get().pushToast(`项目合同已更新至 v${n}：AI 抓取到交货期顺延至 ${to}`);
+        get().pushToast(first ? `项目合同已入库：AI 抓取 ${parsed.version.keyTerms.length} 项重要条目` : `项目合同已更新至 ${parsed.version.id}：${summary || "无条款变更"}`);
       },
 
       updateLinePrice: (contractId, lineId, price) =>
@@ -402,19 +419,6 @@ export const useAppStore = create<AppState>()(
                 },
           ),
         })),
-
-      // AI 流程 1：幂等 upsert 项目 260227 与 c-kaishan-1（覆盖写回种子值，可重复演示）
-      upsertOrderParse: () =>
-        set((s) => {
-          const seedP = seedProjects.find((p) => p.id === "p-260227")!;
-          const seedC = seedContracts.find((c) => c.id === "c-kaishan-1")!;
-          const hasP = s.projects.some((p) => p.id === "p-260227");
-          const hasC = s.contracts.some((c) => c.id === "c-kaishan-1");
-          return {
-            projects: hasP ? s.projects.map((p) => (p.id === "p-260227" ? seedP : p)) : [...s.projects, seedP],
-            contracts: hasC ? s.contracts.map((c) => (c.id === "c-kaishan-1" ? seedC : c)) : [...s.contracts, seedC],
-          };
-        }),
 
       // AI 流程 2：幂等 upsert cl-20260510-1，版本号 +1（项目步骤由清单状态派生，无需另行推进）
       upsertChecklistParse: () =>
@@ -564,8 +568,8 @@ export const useAppStore = create<AppState>()(
     {
       name: "lnpe-demo-v2",
       // 数据结构/种子内容变更时递增：版本不匹配的旧 localStorage 会被直接丢弃（回到种子数据），
-      // 避免旧结构（如缺 keyTerms 的 orderContract）rehydrate 后覆盖新种子导致运行时崩溃
-      version: 11,
+      // 避免旧结构（如 orderContract 顶层 keyTerms、缺 versions[].keyTerms）rehydrate 后覆盖新种子导致运行时崩溃
+      version: 12,
       storage: createJSONStorage(() => localStorage),
       skipHydration: true,
       partialize: (s) =>

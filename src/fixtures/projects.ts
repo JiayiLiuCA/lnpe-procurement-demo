@@ -1,34 +1,16 @@
-import type { Project, TermChange } from "@/lib/types";
+import type { Project } from "@/lib/types";
+import { standardTerms, withTerms } from "@/lib/orderTerms";
 
-/** 把某版的变更套到重要条目上（keyTerms 永远是「当前值」，原值留在 versions[].changes 里） */
-function applyChanges(terms: { label: string; value: string }[], changes: TermChange[]) {
-  return terms.map((t) => {
-    const c = changes.find((x) => x.label === t.label);
-    return c ? { ...t, value: c.to } : t;
-  });
-}
-
+// 每一版项目合同都带 AI 抓取的重要条目；多版本项目的新版在上一版条目上套变更
 // 260706 v2 技术协议附件：补了在线粒度检测仪，验收加了粒度与产能指标
-const CHANGES_260706_V2: TermChange[] = [
-  { label: "交付范围", from: "磷酸铁锂二次粉碎分级线成套设备（含脉冲除尘与螺旋输送）", to: "磷酸铁锂二次粉碎分级线成套设备（含脉冲除尘、螺旋输送、在线粒度检测仪）" },
-  { label: "验收方式", from: "72 小时连续负荷试车", to: "72 小时连续负荷试车 · 成品 D50 1.0–1.5μm、产能 ≥ 1.2 t/h" },
-];
+const TERMS_260706_V1 = standardTerms("¥8,650,000", "2026-11-15", "磷酸铁锂二次粉碎分级线成套设备（含脉冲除尘与螺旋输送）");
+const TERMS_260706_V2 = withTerms(TERMS_260706_V1, {
+  交付范围: "磷酸铁锂二次粉碎分级线成套设备（含脉冲除尘、螺旋输送、在线粒度检测仪）",
+  验收方式: "72 小时连续负荷试车 · 成品 D50 1.0–1.5μm、产能 ≥ 1.2 t/h",
+});
 // 251230 v2 补充协议：交货期顺延一个月
-const CHANGES_251230_V2: TermChange[] = [{ label: "交货期", from: "2026-05-30", to: "2026-06-30" }];
-
-/** 各项目共用的 AI 抓取条款模板（交付范围与日期按项目差异化） */
-function keyTerms(amount: string, delivery: string, scope: string) {
-  return [
-    { label: "合同金额", value: `${amount}（含税 13%）` },
-    { label: "交货期", value: delivery },
-    { label: "交付范围", value: scope },
-    { label: "付款节点", value: "预付 30% · 验收后 60% · 质保金 10%" },
-    { label: "运输与安装", value: "卖方运抵现场 · 指导安装调试" },
-    { label: "验收方式", value: "72 小时连续负荷试车" },
-    { label: "质保期", value: "验收合格起 12 个月" },
-    { label: "结算与开票", value: "电汇 · 每笔收款前开等额 13% 专票" },
-  ];
-}
+const TERMS_251230_V1 = standardTerms("¥6,800,000", "2026-05-30", "二期粉体分级系统成套设备");
+const TERMS_251230_V2 = withTerms(TERMS_251230_V1, { 交货期: "2026-06-30" });
 
 export const projects: Project[] = [
   // 步骤 2 采购清单：项目合同刚入库，技术部尚未出采购清单（步骤、标签、进展全部由 lib/steps.ts 派生）
@@ -46,8 +28,7 @@ export const projects: Project[] = [
       signedAt: "2026-08-12",
       amountInclTax: 12300000,
       deliveryDeadline: "2026-12-20",
-      versions: [{ id: "v1", name: "v1 客户签章版", at: "2026-08-12", by: "赵小燕 上传", final: true }],
-      keyTerms: keyTerms("¥12,300,000", "2026-12-20", "三元正极材料气流粉碎分级线成套设备（2 线，含除尘与气力输送）"),
+      versions: [{ id: "v1", name: "v1 客户签章版", at: "2026-08-12", by: "赵小燕 上传", final: true, aiAt: "2026-08-12", keyTerms: standardTerms("¥12,300,000", "2026-12-20", "三元正极材料气流粉碎分级线成套设备（2 线，含除尘与气力输送）") }],
     },
   },
   // 步骤 2 采购清单：第一批清单已提交待审核，待核对 5 项，第二批（电气与自制件）技术部尚未出
@@ -66,10 +47,9 @@ export const projects: Project[] = [
       amountInclTax: 8650000,
       deliveryDeadline: "2026-11-15",
       versions: [
-        { id: "v1", name: "v1 客户签章版", at: "2026-07-06", by: "敬宏 上传", final: true },
-        { id: "v2", name: "v2 技术协议附件补签", at: "2026-07-21", by: "敬宏 上传", changes: CHANGES_260706_V2 },
+        { id: "v1", name: "v1 客户签章版", at: "2026-07-06", by: "敬宏 上传", final: true, aiAt: "2026-07-06", keyTerms: TERMS_260706_V1 },
+        { id: "v2", name: "v2 技术协议附件补签", at: "2026-07-21", by: "敬宏 上传", aiAt: "2026-07-21", keyTerms: TERMS_260706_V2 },
       ],
-      keyTerms: applyChanges(keyTerms("¥8,650,000", "2026-11-15", "磷酸铁锂二次粉碎分级线成套设备（含脉冲除尘与螺旋输送）"), CHANGES_260706_V2),
     },
   },
   {
@@ -86,8 +66,7 @@ export const projects: Project[] = [
       signedAt: "2026-05-23",
       amountInclTax: 18600000,
       deliveryDeadline: "2026-08-15",
-      versions: [{ id: "v1", name: "v1 客户签章版", at: "2026-05-23", by: "赵小燕 上传", final: true }],
-      keyTerms: keyTerms("¥18,600,000", "2026-08-15", "锂电正极材料一期粉体处理线成套设备"),
+      versions: [{ id: "v1", name: "v1 客户签章版", at: "2026-05-23", by: "赵小燕 上传", final: true, aiAt: "2026-05-23", keyTerms: standardTerms("¥18,600,000", "2026-08-15", "锂电正极材料一期粉体处理线成套设备") }],
     },
   },
   {
@@ -104,8 +83,7 @@ export const projects: Project[] = [
       signedAt: "2026-03-02",
       amountInclTax: 9800000,
       deliveryDeadline: "2026-05-30",
-      versions: [{ id: "v1", name: "v1 客户签章版", at: "2026-03-02", by: "赵小燕 上传", final: true }],
-      keyTerms: keyTerms("¥9,800,000", "2026-05-30", "空压机系统成套设备（12 套）"),
+      versions: [{ id: "v1", name: "v1 客户签章版", at: "2026-03-02", by: "赵小燕 上传", final: true, aiAt: "2026-03-02", keyTerms: standardTerms("¥9,800,000", "2026-05-30", "空压机系统成套设备（12 套）") }],
     },
   },
   {
@@ -122,8 +100,7 @@ export const projects: Project[] = [
       signedAt: "2026-03-07",
       amountInclTax: 1250000,
       deliveryDeadline: "2026-06-05",
-      versions: [{ id: "v1", name: "v1 客户签章版", at: "2026-03-07", by: "赵小燕 上传", final: true }],
-      keyTerms: keyTerms("¥1,250,000", "2026-06-05", "360/560 分级机系统改造与配套件"),
+      versions: [{ id: "v1", name: "v1 客户签章版", at: "2026-03-07", by: "赵小燕 上传", final: true, aiAt: "2026-03-07", keyTerms: standardTerms("¥1,250,000", "2026-06-05", "360/560 分级机系统改造与配套件") }],
     },
   },
   {
@@ -141,10 +118,9 @@ export const projects: Project[] = [
       amountInclTax: 6800000,
       deliveryDeadline: "2026-06-30",
       versions: [
-        { id: "v1", name: "v1 客户签章版", at: "2025-12-30", by: "赵小燕 上传", final: true },
-        { id: "v2", name: "v2 补充协议（交货期顺延）", at: "2026-03-18", by: "赵小燕 上传", changes: CHANGES_251230_V2 },
+        { id: "v1", name: "v1 客户签章版", at: "2025-12-30", by: "赵小燕 上传", final: true, aiAt: "2025-12-30", keyTerms: TERMS_251230_V1 },
+        { id: "v2", name: "v2 补充协议（交货期顺延）", at: "2026-03-18", by: "赵小燕 上传", aiAt: "2026-03-18", keyTerms: TERMS_251230_V2 },
       ],
-      keyTerms: keyTerms("¥6,800,000", "2026-06-30", "二期粉体分级系统成套设备"),
     },
   },
   // 已结束项目（closedAt 有值即 7 步全勾）：全部信息依旧可见
@@ -163,8 +139,7 @@ export const projects: Project[] = [
       signedAt: "2025-11-02",
       amountInclTax: 4200000,
       deliveryDeadline: "2026-06-30",
-      versions: [{ id: "v1", name: "v1 客户签章版", at: "2025-11-02", by: "赵小燕 上传", final: true }],
-      keyTerms: keyTerms("¥4,200,000", "2026-06-30", "一期粉体分级系统成套设备"),
+      versions: [{ id: "v1", name: "v1 客户签章版", at: "2025-11-02", by: "赵小燕 上传", final: true, aiAt: "2025-11-02", keyTerms: standardTerms("¥4,200,000", "2026-06-30", "一期粉体分级系统成套设备") }],
     },
   },
 ];

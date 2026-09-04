@@ -5,6 +5,7 @@ import type { Checklist, Contract, DeliveryNote, MilestoneKey, Project } from ".
 import { checklistStats, overdueContracts, projectContracts } from "./derive";
 import { contractTotal, milestoneAmount } from "./rules";
 import { daysUntil, fmtDate } from "./date";
+import { latestProcessed } from "./orderTerms";
 
 export const STEP_LABELS = ["订单接收", "采购清单", "订货安排", "子合同", "交货跟进", "现场收货", "订单关闭"] as const;
 export type StepNo = 1 | 2 | 3 | 4 | 5 | 6 | 7;
@@ -118,8 +119,9 @@ export function projectProgress(project: Project, checklists: Checklist[], contr
   const closed = !!project.closedAt;
 
   // 完成条件（每一步都以前一步完成为前提）
-  const done: Record<StepNo, boolean> = { 1: true, 2: false, 3: false, 4: false, 5: false, 6: false, 7: false };
-  done[2] = cls.length > 0 && approved === cls.length;
+  const hasContract = !!latestProcessed(project.orderContract);
+  const done: Record<StepNo, boolean> = { 1: hasContract, 2: false, 3: false, 4: false, 5: false, 6: false, 7: false };
+  done[2] = hasContract && cls.length > 0 && approved === cls.length;
   done[3] = done[2] && st.pending === 0;
   done[4] = done[3] && st.contracted >= st.need && drafts === 0;
   done[5] = done[4] && stages.every((s) => s !== "draft" && s !== "delivering");
@@ -129,7 +131,7 @@ export function projectProgress(project: Project, checklists: Checklist[], contr
   const current: StepNo | null = closed ? null : (STEP_NOS.find((n) => !done[n]) ?? 7);
 
   const notesByStep: Record<StepNo, string> = {
-    1: "项目合同已入库",
+    1: !project.orderContract ? "待上传项目合同" : hasContract ? "项目合同已入库" : "AI 抓取中",
     2: cls.length === 0 ? "待技术部提供清单" : approved < cls.length ? `审核 ${approved}/${cls.length} 批` : `已批准 ${cls.length} 批`,
     3: st.pending > 0 ? `待核对 ${st.pending} 项` : `库存 ${st.allocated} · 生产 ${st.produce} · 采购 ${st.need}`,
     4: `覆盖 ${st.contracted}/${st.need}${drafts > 0 ? ` · 待签 ${drafts} 份` : signed > 0 ? ` · 已签 ${signed} 份` : ""}`,

@@ -164,7 +164,7 @@ export function ChecklistWorkspace({ checklist, mode = "full" }: { checklist: Ch
           </div>
           <div className="text-sub mt-1 text-xs">
             {cl.fileName} · 当前版本 {cl.version}
-            {project && ` · 交货期 ${project.deliveryDeadline}`} · AI 解析入库 · 人工校对签核
+            {project?.deliveryDeadline && ` · 交货期 ${project.deliveryDeadline}`} · AI 解析入库 · 人工校对签核
           </div>
         </div>
         <div className="flex-1" />

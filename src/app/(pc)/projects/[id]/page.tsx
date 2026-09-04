@@ -2,6 +2,7 @@
 
 // 项目详情：货物轨 7 步（订单接收 → 采购清单 → 订货安排 → 子合同 → 交货跟进 → 现场收货 → 订单关闭）+ 付款开票轨
 // 点击步骤切换内容，默认停在当前步（由 lib/steps 派生）；支持 ?step=n 直达，旧 ?phase=n 自动映射。
+// 步骤 1 的项目合同 / 版本 / 重要条目在 components/pc/OrderContractStep。
 // 头卡底部一条「本步工作条」：本步任务 + 承接 / 产出 + 本步关键数字 + 主按钮，随选中步切换；步骤 2/3/4 复用同一张清单表，只换动作。
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
@@ -10,9 +11,6 @@ import {
   AlertTriangle,
   Archive,
   Check,
-  Download,
-  Eye,
-  FileSpreadsheet,
   List,
   Smartphone,
   Truck,
@@ -24,11 +22,10 @@ import { StatusPill } from "@/components/ui/StatusPill";
 import { StepStepper } from "@/components/ui/StepProgress";
 import { Money } from "@/components/ui/Money";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { XlsxPreviewDialog, type XlsxCell } from "@/components/ui/XlsxPreviewDialog";
-import { AiBadge } from "@/components/ai/AiBadge";
 import { ContractCard } from "@/components/pc/ContractCard";
 import { ChecklistWorkspace } from "@/components/pc/ChecklistWorkspace";
 import { StepIntro, type StepFact } from "@/components/pc/StepIntro";
+import { OrderContractStep } from "@/components/pc/OrderContractStep";
 import { PaymentLanePanel, MilestonePill } from "@/components/pc/PaymentLanePanel";
 import { ChecklistParseDialog } from "@/components/ai/ChecklistParseDialog";
 import { UploadContractDialog } from "@/components/ai/UploadContractDialog";
@@ -36,81 +33,10 @@ import { useAppStore } from "@/store/useAppStore";
 import { checklistStats, overdueContracts, paymentPlan } from "@/lib/derive";
 import { STEP_LABELS, contractStage, isSignedContract, paymentLane, projectDeliveryNotes, projectProgress, type StepNo } from "@/lib/steps";
 import { daysUntil, fmtDate } from "@/lib/date";
-import { fmtNum } from "@/lib/money";
+import { latestProcessed } from "@/lib/orderTerms";
 import { contractTotal, paidAmount } from "@/lib/rules";
-import { supplierById, BUYER } from "@/fixtures/suppliers";
-import { projects as seedProjects } from "@/fixtures/projects";
-import type { Contract, DeliveryNote, MilestoneKey, OrderContract, Version } from "@/lib/types";
-
-/** 项目合同原件的模拟 xlsx；看历史版本时传入当时的交货期 */
-function orderXlsxRows(oc: OrderContract, deliveryDeadline = oc.deliveryDeadline): XlsxCell[][] {
-  const scope = oc.keyTerms?.find((k) => k.label === "交付范围")?.value ?? "成套设备";
-  return [
-    [{ t: "产 品 购 销 合 同", span: 7, bold: true, center: true }],
-    [
-      { t: `合同编号：${oc.no}`, span: 4 },
-      { t: `签订日期：${oc.signedAt}`, span: 3 },
-    ],
-    [{ t: `买方（需方）：${oc.customer}`, span: 7 }],
-    [{ t: `卖方（供方）：${BUYER.name}`, span: 7 }],
-    [
-      { t: "序号", head: true, center: true },
-      { t: "品名", head: true },
-      { t: "规格型号", head: true },
-      { t: "数量", head: true, center: true },
-      { t: "单位", head: true, center: true },
-      { t: "单价（元）", head: true, right: true },
-      { t: "金额（元）", head: true, right: true },
-    ],
-    [
-      { t: "1", center: true },
-      { t: scope },
-      { t: "按双方技术协议" },
-      { t: "1", center: true },
-      { t: "套", center: true },
-      { t: fmtNum(oc.amountInclTax), right: true },
-      { t: fmtNum(oc.amountInclTax), right: true },
-    ],
-    [
-      { t: "合计（含税 13%）", span: 5, bold: true },
-      { t: "", right: true },
-      { t: fmtNum(oc.amountInclTax), right: true, bold: true },
-    ],
-    [{ t: "付款方式：预付 30% · 设备到场验收合格后 60% · 质保金 10%（质保期满 30 日内付清）", span: 7 }],
-    [{ t: `交货期：${deliveryDeadline}；卖方负责运抵买方指定现场并指导安装调试`, span: 7 }],
-    [{ t: "验收：72 小时连续负荷试车合格；质保期：验收合格之日起 12 个月", span: 7 }],
-    [
-      { t: "买方（盖章）：", span: 4 },
-      { t: "卖方（盖章）：", span: 3 },
-    ],
-  ];
-}
-
-/** 补充协议 / 附件版本的模拟 xlsx：只列变更条款 */
-function supplementXlsxRows(oc: OrderContract, v: Version): XlsxCell[][] {
-  return [
-    [{ t: "补 充 协 议", span: 4, bold: true, center: true }],
-    [
-      { t: `原合同编号：${oc.no}`, span: 2 },
-      { t: `签订日期：${v.at}`, span: 2 },
-    ],
-    [{ t: `买方（需方）：${oc.customer}`, span: 4 }],
-    [{ t: `卖方（供方）：${BUYER.name}`, span: 4 }],
-    [{ t: "经双方协商一致，对原合同作如下变更：", span: 4, bold: true }],
-    [
-      { t: "序号", head: true, center: true },
-      { t: "条款", head: true },
-      { t: "原约定", head: true },
-      { t: "变更为", head: true },
-    ],
-    ...(v.changes ?? []).map((c, i) => [{ t: String(i + 1), center: true }, { t: c.label }, { t: c.from }, { t: c.to }]),
-    [{ t: "本补充协议为原合同不可分割的组成部分，未变更条款仍按原合同执行。", span: 4 }],
-    [
-      { t: "买方（盖章）：", span: 2 },
-      { t: "卖方（盖章）：", span: 2 },
-    ],
-  ];
-}
+import { supplierById } from "@/fixtures/suppliers";
+import type { Contract, DeliveryNote, MilestoneKey } from "@/lib/types";
 
 const sectionCard = "border-line rounded-card border bg-white";
 
@@ -134,7 +60,6 @@ export default function ProjectDetailPage() {
   const allContracts = useAppStore((s) => s.contracts);
   const deliveryNotes = useAppStore((s) => s.deliveryNotes);
   const closeProject = useAppStore((s) => s.closeProject);
-  const addOrderContractVersion = useAppStore((s) => s.addOrderContractVersion);
   const resolveException = useAppStore((s) => s.resolveException);
   const pushToast = useAppStore((s) => s.pushToast);
   const [viewStep, setViewStep] = useState<StepNo | null>(() => {
@@ -148,7 +73,6 @@ export default function ProjectDetailPage() {
   const [batch, setBatch] = useState(0);
   const [uploadClOpen, setUploadClOpen] = useState(false);
   const [uploadCtOpen, setUploadCtOpen] = useState(false);
-  const [xlsxVersion, setXlsxVersion] = useState<Version | null>(null);
 
   if (!project) {
     return (
@@ -182,35 +106,9 @@ export default function ProjectDetailPage() {
   const progress = projectProgress(project, allChecklists, allContracts, deliveryNotes);
   const step: StepNo = viewStep ?? progress.current ?? 7;
   const stepDone = (n: StepNo) => progress.states[n - 1].mark === "done";
-  // 防御性回退：localStorage 里的旧结构项目可能缺 orderContract/keyTerms，逐字段用种子数据补齐
-  const seedOc = seedProjects.find((p) => p.id === project.id)?.orderContract;
-  const baseOc = project.orderContract ?? seedOc;
-  const oc: OrderContract = {
-    fileName: baseOc?.fileName ?? `${project.code}项目合同.xlsx`,
-    no: baseOc?.no ?? `LN-${project.code}`,
-    customer: baseOc?.customer ?? "—",
-    signedAt: baseOc?.signedAt ?? project.orderedAt,
-    amountInclTax: baseOc?.amountInclTax ?? 0,
-    deliveryDeadline: baseOc?.deliveryDeadline ?? project.deliveryDeadline,
-    versions: baseOc?.versions ?? [],
-    keyTerms: baseOc?.keyTerms ?? seedOc?.keyTerms ?? [],
-  };
-
-  // 项目合同版本：最新版的变更用来高亮重要条目；交货期变了要看已签子合同是否落在新截止之后
-  const latestVersion: Version | undefined = oc.versions[oc.versions.length - 1];
-  const latestChanges = latestVersion?.changes ?? [];
-  const changeOf = new Map(latestChanges.map((c) => [c.label, c]));
-  const deadlineChange = changeOf.get("交货期");
-  const signedVersion = oc.versions.find((v) => v.final) ?? oc.versions[0];
-  const lateContracts = signedList.filter((c) => c.deliveryDate && c.deliveryDate > oc.deliveryDeadline);
-  /** 看某个历史版本的原件时，交货期取该版之后第一次变更前的值 */
-  const deadlineAsOf = (v: Version) => {
-    const later = oc.versions
-      .slice(oc.versions.indexOf(v) + 1)
-      .flatMap((x) => x.changes ?? [])
-      .find((c) => c.label === "交货期");
-    return later?.from ?? oc.deliveryDeadline;
-  };
+  // 项目合同可能还没上传（新建项目只有名字）；重要条目以最新一版 AI 抓取结果为准
+  const oc = project.orderContract;
+  const latestTerms = latestProcessed(oc)?.keyTerms ?? [];
 
   // 合同在货物轨上的位置
   const stageOf = (c: Contract) => contractStage(c, deliveryNotes);
@@ -258,8 +156,8 @@ export default function ProjectDetailPage() {
   const recvDone = startedNotes.reduce((s, n) => s + linesOf(n).filter((l) => l.state !== "unconfirmed").length, 0);
   const approvedCls = checklists.filter((c) => c.status === "已批准").length;
   const paidPct = signedTotal > 0 ? `${((paid / signedTotal) * 100).toFixed(1)}%` : "—";
-  const payTerm = oc.keyTerms.find((k) => k.label === "付款节点")?.value;
-  const deadlineDays = daysUntil(oc.deliveryDeadline);
+  const payTerm = latestTerms.find((k) => k.label === "付款节点")?.value;
+  const deadlineDays = project.deliveryDeadline ? daysUntil(project.deliveryDeadline) : null;
   interface Intro {
     from: string;
     task: string;
@@ -270,20 +168,28 @@ export default function ProjectDetailPage() {
   const intro = ((): Intro => {
     switch (step) {
       case 1:
-        return {
-          from: "客户签章的项目合同 xlsx",
-          task: "建档，核对 AI 抓取的重要条目与付款节点",
-          to: "技术部据此编制采购清单",
-          facts: [
-            { label: "合同金额", value: <Money value={oc.amountInclTax} /> },
-            {
-              label: "交货截止",
-              value: `${oc.deliveryDeadline}${project.closedAt ? "" : deadlineDays < 0 ? ` · 逾期 ${-deadlineDays} 天` : ` · 剩 ${deadlineDays} 天`}`,
-              tone: !project.closedAt && deadlineDays < 0 ? "danger" : undefined,
-            },
-            ...(payTerm ? [{ label: "付款节点", value: payTerm }] : []),
-          ],
-        };
+        return oc
+          ? {
+              from: "客户签章的项目合同 xlsx",
+              task: "核对 AI 抓取的重要条目；补充协议、技术附件作为新版上传，AI 逐版抓取",
+              to: "技术部据此编制采购清单",
+              facts: [
+                { label: "合同金额", value: <Money value={oc.amountInclTax} /> },
+                {
+                  label: "交货截止",
+                  value: `${oc.deliveryDeadline}${project.closedAt || deadlineDays == null ? "" : deadlineDays < 0 ? ` · 逾期 ${-deadlineDays} 天` : ` · 剩 ${deadlineDays} 天`}`,
+                  tone: !project.closedAt && deadlineDays != null && deadlineDays < 0 ? "danger" : undefined,
+                },
+                ...(payTerm ? [{ label: "付款节点", value: payTerm }] : []),
+                { label: "版本", value: `${oc.versions.length} 个 · AI 已抓取 ${oc.versions.filter((v) => v.aiAt).length}` },
+              ],
+            }
+          : {
+              from: "项目已建档",
+              task: "上传客户签章的项目合同，AI 抓取合同号、金额、交货期与重要条目",
+              to: "技术部据此编制采购清单",
+              facts: [],
+            };
       case 2:
         return {
           from: "项目合同已入库",
@@ -417,9 +323,11 @@ export default function ProjectDetailPage() {
               </div>
               <div className="text-sub mt-1.5 text-[12.5px]">
                 立项 {project.orderedAt} · 截止{" "}
-                <span className={!project.closedAt && daysUntil(project.deliveryDeadline) < 0 ? "text-danger-deep font-medium" : ""}>
-                  {project.deliveryDeadline}
-                </span>{" "}
+                {project.deliveryDeadline ? (
+                  <span className={!project.closedAt && daysUntil(project.deliveryDeadline) < 0 ? "text-danger-deep font-medium" : ""}>{project.deliveryDeadline}</span>
+                ) : (
+                  <span className="text-faint">待合同抓取</span>
+                )}{" "}
                 · 负责人 {project.owner}
                 {project.closedAt && ` · 已于 ${project.closedAt} 关闭`}
               </div>
@@ -432,155 +340,8 @@ export default function ProjectDetailPage() {
         {/* 付款开票面板：点款项轨节点展开 */}
         {moneyKey && <PaymentLanePanel contracts={contracts} mKey={moneyKey} onClose={() => setMoneyKey(null)} />}
 
-        {/* ---------- 1 订单接收 ---------- */}
-        {step === 1 && (
-          <>
-            {/* 项目合同卡：头信息 + 动作 + 版本记录（补充协议 / 附件的变更由 AI 抓取，点「查看」看该版原件） */}
-            <div className={sectionCard}>
-              <div className="flex items-center gap-4.5 px-5 py-4">
-                <div className="bg-primary-soft text-primary-hover flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px]">
-                  <FileSpreadsheet size={21} strokeWidth={1.8} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2.5">
-                    <div className="text-[15px] font-bold">项目合同</div>
-                    <StatusPill tone="success">已签章</StatusPill>
-                    <div className="text-sub text-xs">
-                      {oc.fileName} · {oc.versions.length} 个版本
-                    </div>
-                  </div>
-                  <div className="text-ink-2 mt-1.5 text-[12.5px]">
-                    合同号 <span className="font-medium tabular-nums">{oc.no}</span> · 客户 {oc.customer} · 签订 {oc.signedAt} · 含税总额{" "}
-                    <Money value={oc.amountInclTax} className="font-bold" /> · 交货期 <span className="font-medium tabular-nums">{oc.deliveryDeadline}</span>
-                  </div>
-                </div>
-                <div className="flex shrink-0 gap-2">
-                  <a href="/samples/contract-sample.xlsx" download={oc.fileName}>
-                    <Btn variant="secondary">
-                      <Download size={14} strokeWidth={1.8} />
-                      下载 xlsx
-                    </Btn>
-                  </a>
-                  <Btn variant="secondary" onClick={() => document.getElementById("order-upload")?.click()}>
-                    <UploadCloud size={14} strokeWidth={1.8} />
-                    上传新版
-                  </Btn>
-                  <input
-                    id="order-upload"
-                    type="file"
-                    accept=".xlsx,.xls,.pdf"
-                    className="hidden"
-                    onChange={(e) => {
-                      if (e.target.files?.length) {
-                        addOrderContractVersion(project.id);
-                        e.target.value = "";
-                      }
-                    }}
-                  />
-                  <Btn variant="primary" onClick={() => setXlsxVersion(signedVersion ?? null)}>
-                    <Eye size={14} strokeWidth={1.8} />
-                    查看合同
-                  </Btn>
-                </div>
-              </div>
-              <div className="border-line-soft border-t px-5 pt-2.5 pb-1.5">
-                <div className="text-sub text-xs font-medium">版本记录</div>
-                {[...oc.versions].reverse().map((v, i, arr) => (
-                  <div key={v.id} className={`flex items-center gap-3 py-2 text-[13px] ${i < arr.length - 1 ? "border-page border-b" : ""}`}>
-                    {v.final ? (
-                      <span className="bg-success flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full">
-                        <Check size={10} strokeWidth={3.2} className="text-white" />
-                      </span>
-                    ) : (
-                      <span className="bg-line-soft h-[18px] w-[18px] shrink-0 rounded-full" />
-                    )}
-                    <span className={`w-[230px] shrink-0 truncate ${v.final ? "font-medium" : ""}`}>{v.name}</span>
-                    <span className="text-sub w-[150px] shrink-0 text-[12px]">
-                      {fmtDate(v.at)} · {v.by}
-                    </span>
-                    <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px]">
-                      {v.changes?.length ? (
-                        <>
-                          <AiBadge text="AI 抓取变更" />
-                          {v.changes.map((ch) => (
-                            <span key={ch.label} className="text-ink-2 truncate">
-                              {ch.label} <span className="text-faint line-through">{ch.from}</span> → <span className="text-ink font-medium">{ch.to}</span>
-                            </span>
-                          ))}
-                        </>
-                      ) : (
-                        <span className="text-faint">{v.final ? "签章原件" : "无条款变更"}</span>
-                      )}
-                    </span>
-                    <button type="button" onClick={() => setXlsxVersion(v)} className="text-primary-hover shrink-0 cursor-pointer text-xs font-medium">
-                      查看
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 重要条目：AI 抓取；最新版改过的条目高亮并留原值；交货期变了给子合同影响提示 */}
-            <div className={`${sectionCard} px-5 py-4.5`}>
-              <div className="flex items-center gap-2.5">
-                <div className="text-sm font-bold">重要条目</div>
-                <AiBadge text="AI 提取" />
-                <span className="text-sub text-xs">自项目合同 xlsx 自动抓取，供快速核对（以签章原件为准）</span>
-                {latestVersion && latestChanges.length > 0 && (
-                  <span className="text-info-deep ml-auto text-xs font-medium">
-                    {latestVersion.name} 更新了 {latestChanges.length} 项
-                  </span>
-                )}
-              </div>
-              <div className="mt-3.5 grid grid-cols-4 gap-3">
-                {oc.keyTerms.map((k) => {
-                  const ch = changeOf.get(k.label);
-                  return (
-                    <div key={k.label} className={`rounded-[10px] px-3.5 py-3 ${ch ? "bg-info-bg" : "bg-page"}`}>
-                      <div className="flex items-center gap-2">
-                        <div className="text-sub text-xs">{k.label}</div>
-                        {ch && latestVersion && <StatusPill tone="info">{latestVersion.id} 更新</StatusPill>}
-                      </div>
-                      <div className="mt-1 text-[13px] leading-snug font-medium">{k.value}</div>
-                      {ch && <div className="text-faint mt-1 text-[11.5px] line-through">原 {ch.from}</div>}
-                    </div>
-                  );
-                })}
-              </div>
-              {deadlineChange && (
-                <div
-                  className={`mt-3 flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-[12.5px] ${
-                    lateContracts.length > 0 ? "bg-danger-bg text-danger-deep" : signedList.length > 0 ? "bg-success-bg text-success-deep" : "bg-page text-ink-2"
-                  }`}
-                >
-                  {lateContracts.length > 0 ? <AlertTriangle size={14} strokeWidth={1.8} className="shrink-0" /> : <Check size={14} strokeWidth={2.4} className="shrink-0" />}
-                  <span className="min-w-0 flex-1 truncate">
-                    {lateContracts.length > 0 ? (
-                      <>
-                        交货期调整为 {deadlineChange.to} 后，{lateContracts.length} 份已签子合同交货期晚于新截止：
-                        {lateContracts.map((c) => (
-                          <Link key={c.id} href={`/contracts/${c.id}`} className="ml-1 font-medium tabular-nums hover:underline">
-                            {c.no}
-                          </Link>
-                        ))}{" "}
-                        · 需与卖方确认
-                      </>
-                    ) : signedList.length > 0 ? (
-                      <>
-                        交货期调整为 {deadlineChange.to} · 已签 {signedList.length} 份子合同交货期均不晚于新截止，无需调整
-                      </>
-                    ) : (
-                      <>交货期调整为 {deadlineChange.to} · 尚无已签子合同，后续子合同交货期以此为准</>
-                    )}
-                  </span>
-                  <Btn variant="secondary" size="sm" onClick={() => setViewStep(signedList.length > 0 ? 5 : 4)}>
-                    {signedList.length > 0 ? "去交货跟进" : "去子合同"}
-                  </Btn>
-                </div>
-              )}
-            </div>
-          </>
-        )}
+        {/* ---------- 1 订单接收：项目合同 + 版本 + AI 重要条目（组件内含上传解析弹窗与原件预览） ---------- */}
+        {step === 1 && <OrderContractStep project={project} signedContracts={signedList} onGoStep={setViewStep} />}
 
         {/* ---------- 2 采购清单 ---------- */}
         {step === 2 && (
@@ -821,15 +582,6 @@ export default function ProjectDetailPage() {
 
       <ChecklistParseDialog open={uploadClOpen} onClose={() => setUploadClOpen(false)} />
       {cl && <UploadContractDialog open={uploadCtOpen} onClose={() => setUploadCtOpen(false)} checklist={cl} />}
-      <XlsxPreviewDialog
-        open={!!xlsxVersion}
-        onClose={() => setXlsxVersion(null)}
-        fileName={xlsxVersion?.changes?.length ? `${project.code}项目合同-${xlsxVersion.id}补充协议.xlsx` : oc.fileName}
-        sheetName={xlsxVersion?.changes?.length ? "补充协议" : "合同"}
-        rows={xlsxVersion ? (xlsxVersion.changes?.length ? supplementXlsxRows(oc, xlsxVersion) : orderXlsxRows(oc, deadlineAsOf(xlsxVersion))) : []}
-        downloadHref="/samples/contract-sample.xlsx"
-        downloadName={oc.fileName}
-      />
     </div>
   );
 }

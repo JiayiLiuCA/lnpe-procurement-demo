@@ -1,12 +1,5 @@
 // 全部实体类型定义（demo 数据模型）
 
-/** 某个版本相对上一版的条款变更（项目合同的补充协议 / 附件由 AI 抓取） */
-export interface TermChange {
-  label: string;
-  from: string;
-  to: string;
-}
-
 export interface Version {
   id: string;
   name: string;
@@ -14,10 +7,29 @@ export interface Version {
   by: string;
   ai?: boolean;
   final?: boolean;
-  changes?: TermChange[];
 }
 
-/** 项目合同（客户签章的 xlsx）：订单接收步查看原件、上传新版（补充协议）、下载；重要条目由 AI 抓取，新版的变更记在 versions[].changes */
+/** AI 从项目合同抓取的一项重要条目 */
+export interface KeyTerm {
+  label: string;
+  value: string;
+}
+
+/** 项目合同的一个版本（签章版 / 补充协议 / 技术附件）：每一版上传后都由 AI 抓取重要条目，aiAt 为抓取时间（无值 = 未抓取） */
+export interface OrderVersion {
+  id: string;
+  name: string;
+  at: string;
+  by: string;
+  final?: boolean;
+  aiAt?: string;
+  keyTerms: KeyTerm[];
+}
+
+/**
+ * 项目合同（客户签章的 xlsx）：订单接收步查看原件、上传新版（补充协议）、下载。
+ * 头部字段与 deliveryDeadline 以最新一版 AI 抓取结果为准；每版抓取到的重要条目记在 versions[].keyTerms。
+ */
 export interface OrderContract {
   fileName: string;
   no: string;
@@ -25,9 +37,7 @@ export interface OrderContract {
   signedAt: string;
   amountInclTax: number;
   deliveryDeadline: string;
-  versions: Version[];
-  /** AI 抓取的重要条目（订单接收步骤列举展示） */
-  keyTerms: { label: string; value: string }[];
+  versions: OrderVersion[];
 }
 
 export interface Project {
@@ -35,14 +45,16 @@ export interface Project {
   code: string;
   name: string;
   orderedAt: string;
-  deliveryDeadline: string;
+  /** 交货截止：由项目合同 AI 抓取（最新版为准）；尚未上传合同时为空 */
+  deliveryDeadline?: string;
   owner: string;
   /**
    * 已关闭日期；有值即项目结束，全部信息仍可见。
    * 项目所处步骤、头部标签、进展文案一律由清单 / 合同 / 送货单派生（见 lib/steps.ts），不落库。
    */
   closedAt?: string;
-  orderContract: OrderContract;
+  /** 新建项目只有名字；合同在订单接收步上传后才有 */
+  orderContract?: OrderContract;
 }
 
 export interface Supplier {
