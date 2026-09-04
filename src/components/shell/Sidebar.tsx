@@ -9,6 +9,7 @@ import {
   Folder,
   LayoutGrid,
   Package,
+  Smartphone,
   Truck,
   Users,
 } from "lucide-react";
@@ -63,6 +64,15 @@ export function Sidebar() {
         })}
       </nav>
       <div className="mt-auto flex flex-col gap-2.5 border-t border-[#403E3E] px-4 py-3.5">
+        {/* 收货小程序（移动端演示）入口：收货动作在小程序完成，PC 端只看记录 */}
+        <Link
+          href="/m"
+          className="text-line-soft flex items-center gap-2 rounded-lg bg-[rgba(255,255,255,.06)] px-3 py-2 text-[12.5px] hover:bg-[rgba(255,255,255,.1)] hover:text-white"
+        >
+          <Smartphone size={15} strokeWidth={1.8} />
+          收货小程序
+          <span className="text-sub ml-auto text-[10.5px]">演示</span>
+        </Link>
         <div className="flex items-center gap-2.5">
           <Avatar name="赵小燕" size={30} />
           <div>

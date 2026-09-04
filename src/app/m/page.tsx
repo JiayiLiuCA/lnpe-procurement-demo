@@ -2,8 +2,9 @@
 
 // 移动端 · 收货任务列表 + AI 流程 6（拍送货单开始收货）
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Camera } from "lucide-react";
+import { Camera, Monitor } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { MTaskCard } from "@/components/mobile/MTaskCard";
 import { MTabBar } from "@/components/mobile/MTabBar";
@@ -45,6 +46,14 @@ export default function MobileTasksPage() {
         <img src="/lnpe-mark.png" alt="LNPE" className="h-[30px] w-[30px] rounded-[7px]" />
         <div className="text-lg font-bold">收货任务</div>
         <div className="flex-1" />
+        {/* 返回 PC 端主页 demo */}
+        <Link
+          href="/"
+          className="text-sub border-line hover:text-ink flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11.5px]"
+        >
+          <Monitor size={13} strokeWidth={1.8} />
+          PC 主页
+        </Link>
         <Avatar name="敬宏" size={32} />
       </div>
       <div className="shrink-0 bg-white px-5 pt-1.5 pb-3.5">
