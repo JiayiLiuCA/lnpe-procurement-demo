@@ -1,7 +1,10 @@
 "use client";
 
-// 采购清单工作区：签核头 + 全局要求 + sheet Tab + 行表 + 吸底操作栏（标记分配 / 上传合同 / AI 生成合同）
-// 项目详情「采购清单」阶段与 /checklists/[id] 页共用
+// 采购清单工作区：同一张清单表在三个步骤复用，只换顶部汇总与底部动作——
+//  review   步骤 2 采购清单：签核（审核通过 / 批准）、版本、下载；表只读
+//  source   步骤 3 订货安排：逐行标记 库存分配 / 安排生产 / 需采购；顶部来源汇总
+//  contract 步骤 4 子合同：勾需采购行 AI 生成初稿 / 上传合同；顶部合同覆盖
+//  full     独立路由 /checklists/[id]：全部动作
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, CircleAlert, Download, UploadCloud } from "lucide-react";
@@ -10,7 +13,7 @@ import { Btn } from "@/components/ui/Btn";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { TabBar } from "@/components/ui/TabBar";
 import { CollapsibleText } from "@/components/ui/CollapsibleText";
-import { ChecklistTable } from "./ChecklistTable";
+import { ChecklistTable, type RowFilter } from "./ChecklistTable";
 import { SelectionFooter } from "./SelectionFooter";
 import { AiSimDialog } from "@/components/ai/AiSimDialog";
 import { ChecklistParseDialog } from "@/components/ai/ChecklistParseDialog";
@@ -22,6 +25,8 @@ import { usePartsCatalog } from "@/lib/parts";
 import { fmtNum } from "@/lib/money";
 import { draftSteps, matchSupplier } from "@/fixtures/ai/contract-template";
 import { supplierById } from "@/fixtures/suppliers";
+
+export type WorkspaceMode = "review" | "source" | "contract" | "full";
 
 /** 签核节点：已签 = 绿勾 + 日期；当前待签 = 青圈；之后的 = 灰圈 */
 function SignNode({ label, at, current }: { label: string; at?: string; current?: boolean }) {
@@ -42,13 +47,14 @@ function SignNode({ label, at, current }: { label: string; at?: string; current?
   );
 }
 
-export function ChecklistWorkspace({ checklist }: { checklist: Checklist }) {
+export function ChecklistWorkspace({ checklist, mode = "full" }: { checklist: Checklist; mode?: WorkspaceMode }) {
   const cl = checklist;
   const router = useRouter();
   const project = useAppStore((s) => s.projects.find((p) => p.id === cl.projectId));
   const markAllocation = useAppStore((s) => s.markAllocation);
   const generateDraftContracts = useAppStore((s) => s.generateDraftContracts);
   const markProduction = useAppStore((s) => s.markProduction);
+  const signoffChecklist = useAppStore((s) => s.signoffChecklist);
   const pushToast = useAppStore((s) => s.pushToast);
 
   const [activeSheet, setActiveSheet] = useState<string>(cl.sheets[0]?.id ?? "s1");
@@ -62,6 +68,19 @@ export function ChecklistWorkspace({ checklist }: { checklist: Checklist }) {
   const sheet = cl.sheets.find((s) => s.id === activeSheet) ?? cl.sheets[0];
   const stats = checklistStats(cl);
   const coverPct = stats.need > 0 ? Math.round((stats.contracted / stats.need) * 100) : 100;
+  // 来源分配的互斥分桶（部分分配单列，避免库存 / 需采购重复计数）
+  const buckets = {
+    allocated: allRows.filter((r) => r.alloc.status === "allocated").length,
+    partial: allRows.filter((r) => r.alloc.status === "partial").length,
+    need: allRows.filter((r) => r.alloc.status === "need").length,
+    produce: allRows.filter((r) => r.alloc.status === "produce").length,
+    pending: allRows.filter((r) => r.alloc.status === "pending").length,
+  };
+  const showSignoff = mode === "review" || mode === "full";
+  const showSource = mode === "source" || mode === "full";
+  const showCoverage = mode === "contract" || mode === "full";
+  const readOnly = mode === "review";
+  const initialFilter: RowFilter = mode === "source" ? (stats.pending > 0 ? "pending" : "all") : mode === "contract" ? "uncovered" : "all";
 
   // AI 预估采购额：需采购行（含部分分配）按预估单价 × 需采购数；自制、已分配、待核对不计
   const { estimateFor } = usePartsCatalog();
@@ -105,6 +124,35 @@ export function ChecklistWorkspace({ checklist }: { checklist: Checklist }) {
     return [...map.entries()];
   })();
 
+  const signoffAction =
+    showSignoff && cl.status !== "已批准" ? (
+      !cl.signoff.reviewAt ? (
+        <Btn
+          variant="primary"
+          size="sm"
+          onClick={() => {
+            signoffChecklist(cl.id, "review");
+            pushToast("清单审核通过，待批准");
+          }}
+        >
+          <Check size={13} strokeWidth={2.4} />
+          审核通过
+        </Btn>
+      ) : (
+        <Btn
+          variant="primary"
+          size="sm"
+          onClick={() => {
+            signoffChecklist(cl.id, "approve");
+            pushToast("清单已批准，进入订货安排");
+          }}
+        >
+          <Check size={13} strokeWidth={2.4} />
+          批准
+        </Btn>
+      )
+    ) : null;
+
   return (
     <div className="flex flex-col gap-3.5">
       {/* 清单头：标题 + 签核 + 文件操作 */}
@@ -138,39 +186,76 @@ export function ChecklistWorkspace({ checklist }: { checklist: Checklist }) {
             <UploadCloud size={13} strokeWidth={1.8} />
             上传新版本
           </Btn>
+          {signoffAction}
         </div>
       </div>
 
-      {/* 合同覆盖模块（与合同执行阶段一致，提示覆盖率） */}
-      <div className="border-line rounded-card flex items-center gap-4 border bg-white px-5 py-3.5">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2.5 text-[13px]">
-            <span className="font-bold">合同覆盖</span>
-            <span className="text-ink-2">
-              需采购 <span className="text-ink font-bold">{stats.need}</span> · 已入合同{" "}
-              <span className="text-info-deep font-bold">{stats.contracted}</span> · 待覆盖{" "}
-              <span className="text-warning-deep font-bold">{stats.need - stats.contracted}</span>
-            </span>
-            <span className="text-sub text-xs">
-              库存已分配 {stats.allocated} 项{stats.produce > 0 && ` · 安排生产 ${stats.produce} 项`}
-              {clEstimate > 0 && (
-                <>
-                  {" "}
-                  · AI 预估采购额 <span className="text-ink font-medium tabular-nums">¥{fmtNum(clEstimate)}</span>
-                  {uncoveredEstimate > 0 && `（未入合同 ¥${fmtNum(uncoveredEstimate)}）`}
-                </>
-              )}
-            </span>
+      {/* 订货安排汇总：库存 / 生产 / 采购 / 待核对 互斥分桶 */}
+      {showSource && (
+        <div className="border-line rounded-card flex items-center gap-4 border bg-white px-5 py-3.5">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2.5 text-[13px]">
+              <span className="font-bold">订货安排</span>
+              <span className="text-ink-2">
+                共 <span className="text-ink font-bold">{stats.total}</span> 项 · 库存分配{" "}
+                <span className="text-success-deep font-bold">{buckets.allocated}</span>
+                {buckets.partial > 0 && (
+                  <>
+                    {" "}
+                    · 部分分配 <span className="text-success-deep font-bold">{buckets.partial}</span>
+                  </>
+                )}{" "}
+                · 安排生产 <span className="text-info-deep font-bold">{buckets.produce}</span> · 需采购{" "}
+                <span className="text-warning-deep font-bold">{buckets.need}</span> · 待核对{" "}
+                <span className={`font-bold ${buckets.pending > 0 ? "text-ink" : "text-faint"}`}>{buckets.pending}</span>
+              </span>
+              <span className="text-sub text-xs">勾选行后在底栏标记；需采购项将进入子合同</span>
+            </div>
+            <div className="bg-line-soft mt-2 flex h-2 gap-px overflow-hidden rounded">
+              <div className="bg-success" style={{ width: `${((buckets.allocated + buckets.partial) / Math.max(stats.total, 1)) * 100}%` }} />
+              <div className="bg-info" style={{ width: `${(buckets.produce / Math.max(stats.total, 1)) * 100}%` }} />
+              <div className="bg-warning" style={{ width: `${(buckets.need / Math.max(stats.total, 1)) * 100}%` }} />
+            </div>
           </div>
-          <div className="bg-line-soft mt-2 flex h-2 overflow-hidden rounded">
-            <div className={coverPct >= 100 ? "bg-success" : "bg-info"} style={{ width: `${coverPct}%` }} />
+          <div className="shrink-0 text-right">
+            <div className="text-sub text-xs">待核对</div>
+            <div className={`text-[19px] font-bold tabular-nums ${buckets.pending > 0 ? "text-ink" : "text-success-deep"}`}>{buckets.pending}</div>
           </div>
         </div>
-        <div className="shrink-0 text-right">
-          <div className="text-sub text-xs">覆盖率</div>
-          <div className={`text-[19px] font-bold tabular-nums ${coverPct >= 100 ? "text-success-deep" : "text-info-deep"}`}>{coverPct}%</div>
+      )}
+
+      {/* 合同覆盖（子合同步）：需采购项有多少已入合同 */}
+      {showCoverage && (
+        <div className="border-line rounded-card flex items-center gap-4 border bg-white px-5 py-3.5">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2.5 text-[13px]">
+              <span className="font-bold">合同覆盖</span>
+              <span className="text-ink-2">
+                需采购 <span className="text-ink font-bold">{stats.need}</span> · 已入合同{" "}
+                <span className="text-info-deep font-bold">{stats.contracted}</span> · 待出合同{" "}
+                <span className="text-warning-deep font-bold">{stats.need - stats.contracted}</span>
+              </span>
+              <span className="text-sub text-xs">
+                库存已分配 {stats.allocated} 项{stats.produce > 0 && ` · 安排生产 ${stats.produce} 项`}
+                {clEstimate > 0 && (
+                  <>
+                    {" "}
+                    · AI 预估采购额 <span className="text-ink font-medium tabular-nums">¥{fmtNum(clEstimate)}</span>
+                    {uncoveredEstimate > 0 && `（未入合同 ¥${fmtNum(uncoveredEstimate)}）`}
+                  </>
+                )}
+              </span>
+            </div>
+            <div className="bg-line-soft mt-2 flex h-2 overflow-hidden rounded">
+              <div className={coverPct >= 100 ? "bg-success" : "bg-info"} style={{ width: `${coverPct}%` }} />
+            </div>
+          </div>
+          <div className="shrink-0 text-right">
+            <div className="text-sub text-xs">覆盖率</div>
+            <div className={`text-[19px] font-bold tabular-nums ${coverPct >= 100 ? "text-success-deep" : "text-info-deep"}`}>{coverPct}%</div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 全局要求黄条（电气资料及要求等纯说明 sheet 下不显示） */}
       {!sheet.infoOnly && (
@@ -193,26 +278,34 @@ export function ChecklistWorkspace({ checklist }: { checklist: Checklist }) {
           <div className="px-5.5 py-4.5 text-[13px] leading-[2] whitespace-pre-line">{sheet.infoText}</div>
         ) : (
           <>
-            <ChecklistTable key={sheet.id} sheet={sheet} selection={selection} onToggle={toggle} />
-            <div className="sticky bottom-0 z-10">
-              <SelectionFooter
-                selectedRows={selectedRows}
-                estimate={selEstimate}
-                onMarkAllocation={(qty) => {
-                  markAllocation(cl.id, [...selection], qty);
-                  pushToast(`已更新 ${selection.size} 行库存分配`);
-                  setSelection(new Set());
-                }}
-                onArrangeProduction={(plan) => {
-                  const eligible = selectedRows.filter((r) => !r.contractId && (plan ? r.alloc.status !== "produce" : r.alloc.status === "produce")).length;
-                  markProduction(cl.id, [...selection], plan);
-                  pushToast(plan ? `已安排生产 ${eligible} 行 · 计划完工 ${plan.produceBy}` : `已撤销 ${eligible} 行生产安排，改回需采购`);
-                  setSelection(new Set());
-                }}
-                onGenerate={() => setGenOpen(true)}
-                onUploadContract={() => setUploadCtOpen(true)}
-              />
-            </div>
+            <ChecklistTable key={`${sheet.id}-${mode}`} sheet={sheet} selection={selection} onToggle={toggle} initialFilter={initialFilter} selectable={!readOnly} />
+            {!readOnly && (
+              <div className="sticky bottom-0 z-10">
+                <SelectionFooter
+                  mode={mode}
+                  selectedRows={selectedRows}
+                  estimate={selEstimate}
+                  onMarkAllocation={(qty) => {
+                    markAllocation(cl.id, [...selection], qty);
+                    pushToast(`已更新 ${selection.size} 行库存分配`);
+                    setSelection(new Set());
+                  }}
+                  onMarkNeed={() => {
+                    markAllocation(cl.id, [...selection], 0);
+                    pushToast(`已标记 ${selection.size} 行需采购`);
+                    setSelection(new Set());
+                  }}
+                  onArrangeProduction={(plan) => {
+                    const eligible = selectedRows.filter((r) => !r.contractId && (plan ? r.alloc.status !== "produce" : r.alloc.status === "produce")).length;
+                    markProduction(cl.id, [...selection], plan);
+                    pushToast(plan ? `已安排生产 ${eligible} 行 · 计划完工 ${plan.produceBy}` : `已撤销 ${eligible} 行生产安排，改回需采购`);
+                    setSelection(new Set());
+                  }}
+                  onGenerate={() => setGenOpen(true)}
+                  onUploadContract={() => setUploadCtOpen(true)}
+                />
+              </div>
+            )}
           </>
         )}
       </div>

@@ -1,6 +1,9 @@
 "use client";
 
-// 清单吸底操作栏：标记库存分配 / 安排生产（公司自制）/ 上传合同 / AI 生成采购合同
+// 清单吸底操作栏，按步骤只露出该步的动作：
+//  source（订货安排）：标记库存分配 / 安排生产（公司自制）/ 标记需采购
+//  contract（子合同）：上传合同（勾选覆盖）/ AI 生成采购合同
+//  full（独立路由）：全部
 import { useState } from "react";
 import { Factory, Sparkles, UploadCloud } from "lucide-react";
 import type { ChecklistRow } from "@/lib/types";
@@ -22,15 +25,20 @@ function plusDays(d: string, n: number): string {
 const INPUT_CLASS = "border-line rounded-ctl text-ink border px-2 py-1 text-[13px] outline-none focus:border-[#CFCCCA]";
 
 export function SelectionFooter({
+  mode = "full",
   selectedRows,
   onMarkAllocation,
+  onMarkNeed,
   onArrangeProduction,
   onGenerate,
   onUploadContract,
   estimate,
 }: {
+  mode?: "review" | "source" | "contract" | "full";
   selectedRows: ChecklistRow[];
   onMarkAllocation: (qty: number) => void;
+  /** 标记为需采购（分配数归零），订货安排步专用 */
+  onMarkNeed?: () => void;
   /** null = 撤销生产安排（改回需采购） */
   onArrangeProduction: (plan: ProductionPlan | null) => void;
   onGenerate: () => void;
@@ -51,6 +59,8 @@ export function SelectionFooter({
   const contractedSel = selectedRows.filter((r) => r.contractId).length;
   const needSum = buyRows.reduce((s, r) => s + (typeof r.qty === "number" ? r.alloc.need || r.qty : 0), 0);
   const brands = [...new Set(buyRows.map((r) => r.brands).filter(Boolean))].join("、");
+  const showSource = mode === "source" || mode === "full";
+  const showContract = mode === "contract" || mode === "full";
 
   return (
     <div className="border-line-soft mt-auto flex items-center gap-3.5 border-t bg-white px-4 py-3">
@@ -65,11 +75,12 @@ export function SelectionFooter({
         )}
       </div>
       <div className="text-sub text-[12.5px]">
-        {brands ? `候选品牌：${brands} · ` : ""}跨子系统同供应商项将自动合并为一份合同
+        {showContract ? `${brands ? `候选品牌：${brands} · ` : ""}跨子系统同供应商项将自动合并为一份合同` : "已分配的行不可再选；安排生产的行可撤销改回需采购"}
       </div>
       <div className="flex-1" />
 
       {/* 标记库存分配 */}
+      {showSource && (
       <div className="relative">
         <Btn
           variant="secondary"
@@ -108,7 +119,10 @@ export function SelectionFooter({
         )}
       </div>
 
+      )}
+
       {/* 安排生产（公司自制） */}
+      {showSource && (
       <div className="relative">
         <Btn
           variant="secondary"
@@ -173,17 +187,27 @@ export function SelectionFooter({
           </div>
         )}
       </div>
+      )}
 
-      {onUploadContract && (
+      {/* 标记需采购：分配数归零，进入子合同步出合同 */}
+      {showSource && onMarkNeed && (
+        <Btn variant="secondary" disabled={n === 0} onClick={onMarkNeed}>
+          标记需采购
+        </Btn>
+      )}
+
+      {showContract && onUploadContract && (
         <Btn variant="secondary" disabled={buyRows.length === 0} onClick={onUploadContract}>
           <UploadCloud size={14} strokeWidth={1.8} />
           上传合同（勾选覆盖）
         </Btn>
       )}
-      <Btn variant="primary" disabled={buyRows.length === 0} onClick={onGenerate}>
-        <Sparkles size={14} strokeWidth={1.8} />
-        AI 生成采购合同
-      </Btn>
+      {showContract && (
+        <Btn variant="primary" disabled={buyRows.length === 0} onClick={onGenerate}>
+          <Sparkles size={14} strokeWidth={1.8} />
+          AI 生成采购合同
+        </Btn>
+      )}
     </div>
   );
 }
