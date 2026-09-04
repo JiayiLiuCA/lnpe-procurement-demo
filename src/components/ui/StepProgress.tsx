@@ -164,38 +164,48 @@ export function StepStepper({
         })}
       </div>
 
-      {/* 付款开票轨：前 3 格放说明，后 4 格的节点对齐在触发它的步骤下方 */}
-      <div style={GRID} className="items-start">
-        <div className="text-sub col-span-3 flex items-center gap-2 pr-6 text-[11.5px]" style={{ height: 44 }}>
+      {/* 付款开票轨：没有已签子合同时只留一行提示；有了以后前 3 格放说明，后 4 格的节点对齐在触发它的步骤下方 */}
+      {lane.every((n) => n.total === 0) ? (
+        <div className="text-faint flex items-center gap-3 text-[11.5px]">
           <span className="bg-line-soft h-px flex-1" />
-          <span className="whitespace-nowrap font-medium">付款开票</span>
-          <span className="text-faint whitespace-nowrap">按合同付款条款 10 / 50 / 30 / 10</span>
+          <span className="whitespace-nowrap">
+            <span className="text-sub font-medium">付款开票</span> · 签订子合同后启动 · 按合同付款条款 10 / 50 / 30 / 10 分四笔，分别对齐子合同 / 交货跟进 / 现场收货 / 订单关闭
+          </span>
+          <span className="bg-line-soft h-px flex-1" />
         </div>
-        {lane.map((n) => {
-          const tone = laneTone(n);
-          const active = moneyKey === n.key;
-          return (
-            <button
-              key={n.key}
-              type="button"
-              onClick={() => onSelectMoney(active ? null : n.key)}
-              title={n.total === 0 ? "尚无已签子合同" : `${n.label}：已付 ${n.paid}/${n.total} 份${n.due > 0 ? ` · 到期未付 ${n.due} 份` : ""}${n.invoiced > 0 ? ` · 已开票 ${n.invoiced} 份` : ""}`}
-              className={`mx-1 flex min-w-0 cursor-pointer items-center justify-center gap-2.5 rounded-lg px-2 ${active ? "bg-line-soft" : "hover:bg-page"}`}
-              style={{ height: 44 }}
-            >
-              <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[12px] font-bold ${tone.dot}`}>¥</span>
-              <span className="flex min-w-0 flex-col items-start leading-tight">
-                <span className="text-[12px] font-medium whitespace-nowrap">
-                  {n.label} {Math.round(n.ratio * 100)}%
+      ) : (
+        <div style={GRID} className="items-start">
+          <div className="text-sub col-span-3 flex items-center gap-2 pr-6 text-[11.5px]" style={{ height: 44 }}>
+            <span className="bg-line-soft h-px flex-1" />
+            <span className="whitespace-nowrap font-medium">付款开票</span>
+            <span className="text-faint whitespace-nowrap">按合同付款条款 10 / 50 / 30 / 10</span>
+          </div>
+          {lane.map((n) => {
+            const tone = laneTone(n);
+            const active = moneyKey === n.key;
+            return (
+              <button
+                key={n.key}
+                type="button"
+                onClick={() => onSelectMoney(active ? null : n.key)}
+                title={n.total === 0 ? "尚无已签子合同" : `${n.label}：已付 ${n.paid}/${n.total} 份${n.due > 0 ? ` · 到期未付 ${n.due} 份` : ""}${n.invoiced > 0 ? ` · 已开票 ${n.invoiced} 份` : ""}`}
+                className={`mx-1 flex min-w-0 cursor-pointer items-center justify-center gap-2.5 rounded-lg px-2 ${active ? "bg-line-soft" : "hover:bg-page"}`}
+                style={{ height: 44 }}
+              >
+                <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[12px] font-bold ${tone.dot}`}>¥</span>
+                <span className="flex min-w-0 flex-col items-start leading-tight">
+                  <span className="text-[12px] font-medium whitespace-nowrap">
+                    {n.label} {Math.round(n.ratio * 100)}%
+                  </span>
+                  <span className={`text-[11px] whitespace-nowrap tabular-nums ${tone.text}`}>
+                    {n.total === 0 ? "尚无已签合同" : `${n.paid}/${n.total} 已付${n.overdue > 0 ? ` · 逾期 ${n.overdue}` : n.due > 0 ? ` · 到期 ${n.due}` : ""}`}
+                  </span>
                 </span>
-                <span className={`text-[11px] whitespace-nowrap tabular-nums ${tone.text}`}>
-                  {n.total === 0 ? "尚无已签合同" : `${n.paid}/${n.total} 已付${n.overdue > 0 ? ` · 逾期 ${n.overdue}` : n.due > 0 ? ` · 到期 ${n.due}` : ""}`}
-                </span>
-              </span>
-            </button>
-          );
-        })}
-      </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

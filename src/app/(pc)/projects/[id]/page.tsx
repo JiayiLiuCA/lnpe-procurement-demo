@@ -2,8 +2,8 @@
 
 // 项目详情：货物轨 7 步（订单接收 → 采购清单 → 订货安排 → 子合同 → 交货跟进 → 现场收货 → 订单关闭）+ 付款开票轨
 // 点击步骤切换内容，默认停在当前步（由 lib/steps 派生）；支持 ?step=n 直达，旧 ?phase=n 自动映射。
-// 每一步顶部一条「承接 / 本步 / 产出」说明 + 一个主按钮；步骤 2/3/4 复用同一张清单表，只换动作。
-import { useState } from "react";
+// 头卡底部一条「本步工作条」：本步任务 + 承接 / 产出 + 本步关键数字 + 主按钮，随选中步切换；步骤 2/3/4 复用同一张清单表，只换动作。
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import {
@@ -29,7 +29,7 @@ import { XlsxPreviewDialog, type XlsxCell } from "@/components/ui/XlsxPreviewDia
 import { AiBadge } from "@/components/ai/AiBadge";
 import { ContractCard } from "@/components/pc/ContractCard";
 import { ChecklistWorkspace } from "@/components/pc/ChecklistWorkspace";
-import { StepIntro } from "@/components/pc/StepIntro";
+import { StepIntro, type StepFact } from "@/components/pc/StepIntro";
 import { PaymentLanePanel, MilestonePill } from "@/components/pc/PaymentLanePanel";
 import { ChecklistParseDialog } from "@/components/ai/ChecklistParseDialog";
 import { UploadContractDialog } from "@/components/ai/UploadContractDialog";
@@ -181,7 +181,6 @@ export default function ProjectDetailPage() {
   // 送货单与本项目相关的行
   const pNotes = [...projectDeliveryNotes(project, allContracts, deliveryNotes)].sort((a, b) => b.date.localeCompare(a.date));
   const linesOf = (n: DeliveryNote) => n.lines.filter((l) => l.projectCode === project.code || contracts.some((c) => c.id === l.contractId));
-  const receivedLines = pNotes.reduce((s, n) => s + linesOf(n).filter((l) => l.state === "confirmed").length, 0);
   const excOpen = pNotes.reduce((s, n) => s + linesOf(n).filter((l) => l.state === "exception" && !l.exception?.resolvedAt).length, 0);
   const closedContracts = contracts.filter((c) => c.status === "closed").length;
   const partialArrived = (c: Contract) => deliveryNotes.some((n) => n.contractIds.includes(c.id) && n.status === "in_progress");
@@ -209,6 +208,142 @@ export default function ProjectDetailPage() {
     </div>
   );
 
+  // 本步工作条：承接 / 本步 / 产出 + 本步关键数字 + 主按钮。数字按步筛选；订货安排 / 子合同两步的数字工作区条带里已有，不重复
+  // 与 lib/steps 的第 6 步小字同口径：只算已开始收货（in_progress / done）的送货单行，处理过（确认或异常）算一项
+  const startedNotes = pNotes.filter((n) => n.status !== "pending");
+  const recvTotal = startedNotes.reduce((s, n) => s + linesOf(n).length, 0);
+  const recvDone = startedNotes.reduce((s, n) => s + linesOf(n).filter((l) => l.state !== "unconfirmed").length, 0);
+  const approvedCls = checklists.filter((c) => c.status === "已批准").length;
+  const paidPct = signedTotal > 0 ? `${((paid / signedTotal) * 100).toFixed(1)}%` : "—";
+  const payTerm = oc.keyTerms.find((k) => k.label === "付款节点")?.value;
+  const deadlineDays = daysUntil(oc.deliveryDeadline);
+  interface Intro {
+    from: string;
+    task: string;
+    to: string;
+    facts?: StepFact[];
+    action?: ReactNode;
+  }
+  const intro = ((): Intro => {
+    switch (step) {
+      case 1:
+        return {
+          from: "客户订单合同 xlsx",
+          task: "建档，核对 AI 抓取的重要条目与付款节点",
+          to: "技术部据此编制采购清单",
+          facts: [
+            { label: "订单金额", value: <Money value={oc.amountInclTax} /> },
+            {
+              label: "交货截止",
+              value: `${oc.deliveryDeadline}${project.closedAt ? "" : deadlineDays < 0 ? ` · 逾期 ${-deadlineDays} 天` : ` · 剩 ${deadlineDays} 天`}`,
+              tone: !project.closedAt && deadlineDays < 0 ? "danger" : undefined,
+            },
+            ...(payTerm ? [{ label: "付款节点", value: payTerm }] : []),
+          ],
+        };
+      case 2:
+        return {
+          from: "订单合同已入库",
+          task: "上传技术部采购清单，AI 解析后人工校对、审核、批准；可分批",
+          to: "批准后进入订货安排",
+          facts:
+            checklists.length === 0
+              ? []
+              : [
+                  { label: "清单", value: `${checklists.length} 批` },
+                  { label: "共", value: `${agg.total} 项` },
+                  { label: "已批准", value: `${approvedCls}/${checklists.length} 批`, tone: approvedCls === checklists.length ? "success" : undefined },
+                ],
+          action: batchTabs,
+        };
+      case 3:
+        return {
+          from: stepDone(2) ? `清单已批准 · ${agg.total} 项` : "清单尚未批准",
+          task: "逐行标记来源：库存分配 / 安排生产 / 需采购",
+          to: `需采购项进入子合同（当前 ${agg.need} 项）`,
+          action: (
+            <>
+              {batchTabs}
+              <Link href="/inventory">
+                <Btn variant="secondary">查看库存</Btn>
+              </Link>
+            </>
+          ),
+        };
+      case 4:
+        return {
+          from: `需采购 ${agg.need} 项 · 待出合同 ${Math.max(agg.need - agg.contracted, 0)} 项`,
+          task: "按供应商勾选需采购行，AI 生成初稿或上传已签合同；校对、定稿、签订",
+          to: "签订后进入交货跟进，预付款节点同时启动",
+          action: (
+            <>
+              {batchTabs}
+              {cl && (
+                <Btn variant="secondary" onClick={() => setUploadCtOpen(true)}>
+                  <UploadCloud size={14} strokeWidth={1.8} />
+                  上传合同 xlsx
+                </Btn>
+              )}
+            </>
+          ),
+        };
+      case 5:
+        return {
+          from: `已签子合同 ${signedList.length} 份`,
+          task: "盯交货期，逾期红色提醒；卖方发货前付发货款",
+          to: "货到现场后小程序创建收货任务，进入现场收货",
+          facts: [
+            { label: "在途", value: `${delivering.length} 份` },
+            ...(overdue.length > 0 ? [{ label: "逾期", value: `${overdue.length} 份`, tone: "danger" as const }] : []),
+            { label: "已签总额", value: <Money value={signedTotal} /> },
+            { label: "已付", value: paidPct },
+          ],
+          action:
+            m2.due > 0 ? (
+              <Btn variant="secondary" onClick={() => setMoneyKey("M2")}>
+                发货款到期 {m2.due} 份
+              </Btn>
+            ) : undefined,
+        };
+      case 6:
+        return {
+          from: `在途 ${delivering.length} 份 · 已到场 ${beyond.length} 份`,
+          task: "现场收货员用小程序按送货单逐行打勾、拍照留存；异常在这里处理",
+          to: "全部送货单完成且异常处理完，可关闭订单",
+          facts: [
+            { label: "送货单", value: `${pNotes.length} 张` },
+            { label: "收货", value: `${recvDone}/${recvTotal} 项` },
+            { label: "异常", value: `${excOpen} 项`, tone: excOpen > 0 ? "danger" : undefined },
+          ],
+          action: (
+            <>
+              <Link href="/receipts">
+                <Btn variant="secondary">收货记录</Btn>
+              </Link>
+              <Link href="/m">
+                <Btn variant="secondary">
+                  <Smartphone size={14} strokeWidth={1.8} />
+                  收货小程序
+                </Btn>
+              </Link>
+            </>
+          ),
+        };
+      case 7:
+        return {
+          from: project.closedAt ? "订单已关闭" : stepDone(6) ? "现场收货已完成" : `现场收货尚未完成 · 当前在「${STEP_LABELS[(progress.current ?? 7) - 1]}」`,
+          task: "核对验收款、质保金，完结合同后关闭订单",
+          to: "关闭后信息保留可查，质保金到期仍进提醒中心",
+          facts: [
+            { label: "子合同", value: `${contracts.length} 份 · 已完结 ${closedContracts}` },
+            { label: "已签总额", value: <Money value={signedTotal} /> },
+            { label: "已付", value: paidPct },
+            { label: "到期未付", value: `${projectPlan.length} 笔`, tone: projectPlan.length > 0 ? "warning" : undefined },
+          ],
+        };
+    }
+  })();
+
   return (
     <div className="flex min-h-dvh flex-col">
       <Topbar
@@ -231,76 +366,32 @@ export default function ProjectDetailPage() {
         }
       />
       <div className="flex flex-1 flex-col gap-3.5 p-6">
-        {/* 头卡：标题 + 派生标签 + 可点击步骤条（含付款开票轨） */}
-        <div className="border-line rounded-card flex flex-col gap-4 border bg-white px-5.5 py-4">
-          <div className="min-w-0">
-            <div className="flex items-center gap-3">
-              <div className="text-xl font-bold">
-                {project.code} <span className="font-medium">{project.name}</span>
+        {/* 头卡：标题 + 派生标签 + 可点击步骤条（含付款开票轨）+ 底部本步工作条 */}
+        <div className="border-line rounded-card overflow-hidden border bg-white">
+          <div className="flex flex-col gap-4 px-5.5 pt-4 pb-3.5">
+            <div className="min-w-0">
+              <div className="flex items-center gap-3">
+                <div className="text-xl font-bold">
+                  {project.code} <span className="font-medium">{project.name}</span>
+                </div>
+                {progress.tags.map((t) => (
+                  <StatusPill key={t.text} tone={t.tone}>
+                    {t.text}
+                  </StatusPill>
+                ))}
               </div>
-              {progress.tags.map((t) => (
-                <StatusPill key={t.text} tone={t.tone}>
-                  {t.text}
-                </StatusPill>
-              ))}
+              <div className="text-sub mt-1.5 text-[12.5px]">
+                立项 {project.orderedAt} · 截止{" "}
+                <span className={!project.closedAt && daysUntil(project.deliveryDeadline) < 0 ? "text-danger-deep font-medium" : ""}>
+                  {project.deliveryDeadline}
+                </span>{" "}
+                · 负责人 {project.owner}
+                {project.closedAt && ` · 已于 ${project.closedAt} 关闭`}
+              </div>
             </div>
-            <div className="text-sub mt-1.5 text-[12.5px]">
-              立项 {project.orderedAt} · 截止{" "}
-              <span className={!project.closedAt && daysUntil(project.deliveryDeadline) < 0 ? "text-danger-deep font-medium" : ""}>
-                {project.deliveryDeadline}
-              </span>{" "}
-              · 负责人 {project.owner}
-              {project.closedAt && ` · 已于 ${project.closedAt} 关闭`}
-            </div>
+            <StepStepper project={project} viewStep={step} onSelect={setViewStep} moneyKey={moneyKey} onSelectMoney={setMoneyKey} />
           </div>
-          <StepStepper project={project} viewStep={step} onSelect={setViewStep} moneyKey={moneyKey} onSelectMoney={setMoneyKey} />
-        </div>
-
-        {/* 核心统计（6 张） */}
-        <div className="flex gap-3">
-          <div className="border-line flex-1 rounded-[10px] border bg-white px-4 py-3">
-            <div className="text-sub text-xs">需采购</div>
-            <div className="mt-0.5 text-[18px] font-bold tabular-nums">
-              {agg.need} <span className="text-sub text-xs font-normal">项{agg.pending > 0 && ` · 待核对 ${agg.pending}`}</span>
-            </div>
-          </div>
-          <div className="border-line flex-1 rounded-[10px] border bg-white px-4 py-3">
-            <div className="text-sub text-xs">库存已分配</div>
-            <div className="text-success-deep mt-0.5 text-[18px] font-bold tabular-nums">
-              {agg.allocated} <span className="text-sub text-xs font-normal">项{agg.produce > 0 && ` · 安排生产 ${agg.produce}`}</span>
-            </div>
-          </div>
-          <div className="border-line flex-[1.7] rounded-[10px] border bg-white px-4 py-3">
-            <div className="text-sub text-xs">子合同</div>
-            <div className="mt-0.5 text-[18px] font-bold tabular-nums">
-              {contracts.length}{" "}
-              <span className="text-sub text-xs font-normal">
-                份 · 已签 {signedList.length} 份 · 覆盖 {agg.contracted}/{agg.need} 项
-              </span>
-            </div>
-          </div>
-          <div className="border-line flex-[1.15] rounded-[10px] border bg-white px-4 py-3">
-            <div className="text-sub text-xs">已签合同总额</div>
-            <div className="mt-0.5 text-[18px] font-bold">
-              <Money value={signedTotal} />
-            </div>
-          </div>
-          <div className="border-line flex-[1.15] rounded-[10px] border bg-white px-4 py-3">
-            <div className="text-sub text-xs">累计已付款</div>
-            <div className="mt-0.5 text-[18px] font-bold">
-              <Money value={paid} />{" "}
-              {signedTotal > 0 && <span className="text-sub text-xs font-normal">{((paid / signedTotal) * 100).toFixed(1)}%</span>}
-            </div>
-          </div>
-          <div className="border-line flex-1 rounded-[10px] border bg-white px-4 py-3">
-            <div className="text-sub text-xs">已收货</div>
-            <div className="mt-0.5 text-[18px] font-bold tabular-nums">
-              {receivedLines}{" "}
-              <span className="text-sub text-xs font-normal">
-                项{excOpen > 0 && <span className="text-danger-deep"> · 异常 {excOpen}</span>}
-              </span>
-            </div>
-          </div>
+          <StepIntro from={intro.from} task={intro.task} to={intro.to} facts={intro.facts} action={intro.action} />
         </div>
 
         {/* 付款开票面板：点款项轨节点展开 */}
@@ -309,7 +400,6 @@ export default function ProjectDetailPage() {
         {/* ---------- 1 订单接收 ---------- */}
         {step === 1 && (
           <>
-            <StepIntro from="客户订单合同 xlsx" task="建档，核对 AI 抓取的重要条目与付款节点" to="技术部据此编制采购清单" />
             <div className={`${sectionCard} flex items-center gap-4.5 px-5 py-4`}>
               <div className="bg-primary-soft text-primary-hover flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px]">
                 <FileSpreadsheet size={21} strokeWidth={1.8} />
@@ -365,7 +455,6 @@ export default function ProjectDetailPage() {
         {/* ---------- 2 采购清单 ---------- */}
         {step === 2 && (
           <>
-            <StepIntro from="订单合同已入库" task="上传技术部采购清单，AI 解析后人工校对、审核、批准；可分批" to="批准后进入订货安排" action={batchTabs} />
             {cl ? (
               <ChecklistWorkspace key={cl.id} checklist={cl} mode="review" />
             ) : (
@@ -386,19 +475,6 @@ export default function ProjectDetailPage() {
         {/* ---------- 3 订货安排 ---------- */}
         {step === 3 && (
           <>
-            <StepIntro
-              from={stepDone(2) ? `清单已批准 · ${agg.total} 项` : "清单尚未批准"}
-              task="逐行标记来源：库存分配 / 安排生产 / 需采购"
-              to={`需采购项进入子合同（当前 ${agg.need} 项）`}
-              action={
-                <>
-                  {batchTabs}
-                  <Link href="/inventory">
-                    <Btn variant="secondary">查看库存</Btn>
-                  </Link>
-                </>
-              }
-            />
             {cl ? <ChecklistWorkspace key={cl.id} checklist={cl} mode="source" /> : noChecklist}
           </>
         )}
@@ -406,22 +482,6 @@ export default function ProjectDetailPage() {
         {/* ---------- 4 子合同 ---------- */}
         {step === 4 && (
           <>
-            <StepIntro
-              from={`需采购 ${agg.need} 项 · 待出合同 ${Math.max(agg.need - agg.contracted, 0)} 项`}
-              task="按供应商勾选需采购行，AI 生成初稿或上传已签合同；校对、定稿、签订"
-              to="签订后进入交货跟进，预付款节点同时启动"
-              action={
-                <>
-                  {batchTabs}
-                  {cl && (
-                    <Btn variant="secondary" onClick={() => setUploadCtOpen(true)}>
-                      <UploadCloud size={14} strokeWidth={1.8} />
-                      上传合同 xlsx
-                    </Btn>
-                  )}
-                </>
-              }
-            />
             {cl ? <ChecklistWorkspace key={cl.id} checklist={cl} mode="contract" /> : noChecklist}
             {contracts.length > 0 && (
               <>
@@ -451,18 +511,6 @@ export default function ProjectDetailPage() {
         {/* ---------- 5 交货跟进 ---------- */}
         {step === 5 && (
           <>
-            <StepIntro
-              from={`已签子合同 ${signedList.length} 份`}
-              task="盯交货期，逾期红色提醒；卖方发货前付发货款"
-              to="货到现场后小程序创建收货任务，进入现场收货"
-              action={
-                m2.due > 0 ? (
-                  <Btn variant="secondary" onClick={() => setMoneyKey("M2")}>
-                    发货款到期 {m2.due} 份
-                  </Btn>
-                ) : undefined
-              }
-            />
             {/* 交货逾期：只提醒，点击去合同页，不做催办动作 */}
             {overdue.length > 0 && (
               <div className="flex flex-col gap-2">
@@ -518,24 +566,6 @@ export default function ProjectDetailPage() {
         {/* ---------- 6 现场收货 ---------- */}
         {step === 6 && (
           <>
-            <StepIntro
-              from={`在途 ${delivering.length} 份 · 已到场 ${beyond.length} 份`}
-              task="现场收货员用小程序按送货单逐行打勾、拍照留存；异常在这里处理"
-              to="全部送货单完成且异常处理完，可关闭订单"
-              action={
-                <>
-                  <Link href="/receipts">
-                    <Btn variant="secondary">收货记录</Btn>
-                  </Link>
-                  <Link href="/m">
-                    <Btn variant="secondary">
-                      <Smartphone size={14} strokeWidth={1.8} />
-                      收货小程序
-                    </Btn>
-                  </Link>
-                </>
-              }
-            />
             {pNotes.length > 0 ? (
               <div className={sectionCard}>
                 {pNotes.map((n, i) => {
@@ -603,36 +633,11 @@ export default function ProjectDetailPage() {
         {/* ---------- 7 订单关闭 ---------- */}
         {step === 7 && (
           <>
-            <StepIntro
-              from={project.closedAt ? "订单已关闭" : stepDone(6) ? "现场收货已完成" : `现场收货尚未完成 · 当前在「${STEP_LABELS[(progress.current ?? 7) - 1]}」`}
-              task="核对验收款、质保金，完结合同后关闭订单"
-              to="关闭后信息保留可查，质保金到期仍进提醒中心"
-            />
             <div className={`${sectionCard} flex flex-col gap-3.5 px-5 py-4.5`}>
               <div className="flex items-center gap-2.5">
                 <Archive size={17} strokeWidth={1.8} className="text-ink-2" />
                 <div className="text-sm font-bold">订单关闭</div>
                 {project.closedAt && <StatusPill tone="neutral">已于 {project.closedAt} 关闭</StatusPill>}
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="bg-page rounded-[10px] px-4 py-3">
-                  <div className="text-sub text-xs">子合同</div>
-                  <div className="mt-0.5 text-[17px] font-bold tabular-nums">
-                    {contracts.length} <span className="text-sub text-xs font-normal">份 · 已完结 {closedContracts}</span>
-                  </div>
-                </div>
-                <div className="bg-page rounded-[10px] px-4 py-3">
-                  <div className="text-sub text-xs">未清付款</div>
-                  <div className="mt-0.5 text-[17px] font-bold tabular-nums">
-                    {projectPlan.length} <span className="text-sub text-xs font-normal">笔到期未付</span>
-                  </div>
-                </div>
-                <div className="bg-page rounded-[10px] px-4 py-3">
-                  <div className="text-sub text-xs">累计已付</div>
-                  <div className="mt-0.5 text-[17px] font-bold">
-                    <Money value={paid} />
-                  </div>
-                </div>
               </div>
               {signedList.length > 0 && (
                 <div className="border-line-soft overflow-hidden rounded-[10px] border">
