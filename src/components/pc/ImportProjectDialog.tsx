@@ -1,7 +1,7 @@
 "use client";
 
 // 导入已有项目：把线下已在执行的项目一次性搬进系统。
-// demo 仅做入口——弹窗说明需要准备哪些资料、导入后会落到哪个阶段，不读取任何文件。
+// demo 仅做入口——弹窗说明需要准备哪些资料、导入后会落到哪一步，不读取任何文件。
 import { FileSpreadsheet, FileText, FolderInput, List, Receipt, X } from "lucide-react";
 import { Btn } from "@/components/ui/Btn";
 import { StatusPill } from "@/components/ui/StatusPill";
@@ -21,7 +21,7 @@ const ITEMS = [
     title: "采购清单（技术部制表）",
     format: "xls / xlsx · 可多批",
     required: false,
-    desc: "解析各子系统行明细，保留制表 / 审核 / 批准签核状态，随后进入库存核对",
+    desc: "解析各子系统行明细，保留制表 / 审核 / 批准签核状态，随后进入订货安排",
     lands: "采购清单",
   },
   {
@@ -30,7 +30,7 @@ const ITEMS = [
     format: "xlsx · 可多份",
     required: false,
     desc: "按供应商建立子合同，回填清单覆盖关系，并按付款条款生成 M1–M4 里程碑",
-    lands: "合同执行",
+    lands: "子合同",
   },
   {
     icon: Receipt,
@@ -38,7 +38,7 @@ const ITEMS = [
     format: "xlsx / 图片",
     required: false,
     desc: "补齐已付款、已开票与已收货状态，后续只需从当前节点继续跟进",
-    lands: "合同执行",
+    lands: "交货跟进 / 现场收货",
   },
 ];
 
@@ -64,7 +64,7 @@ export function ImportProjectDialog({ open, onClose }: { open: boolean; onClose:
         </div>
 
         <div className="flex flex-1 flex-col gap-3.5 overflow-y-auto p-5">
-          <div className="text-ink-2 text-[13px]">请准备以下资料。系统按资料完整度自动判断项目所处阶段，资料齐全的项目导入后无需重新走流程。</div>
+          <div className="text-ink-2 text-[13px]">请准备以下资料。系统按资料完整度自动判断项目所处步段，资料齐全的项目导入后无需重新走流程。</div>
 
           <div className="border-line-soft overflow-hidden rounded-[10px] border">
             {ITEMS.map((it, i) => {
@@ -92,8 +92,8 @@ export function ImportProjectDialog({ open, onClose }: { open: boolean; onClose:
           </div>
 
           <div className="bg-page text-ink-2 rounded-[10px] px-4 py-3 text-[12.5px] leading-relaxed">
-            仅有订单合同 → 停在「订单接收」，等技术部出清单；含采购清单 → 进入「采购清单」做库存核对；含已签合同 →
-            进入「合同执行」，付款与收货从导入的记录之后继续。导入结果先以草稿呈现，人工确认后再入库。
+            仅有订单合同 → 停在「采购清单」，等技术部出清单；含采购清单 → 进入「订货安排」做库存 / 生产 / 采购分派；含已签合同 →
+            进入「交货跟进」，付款开票与现场收货从导入的记录之后继续。导入结果先以草稿呈现，人工确认后再入库。
           </div>
           <div className="text-faint text-xs">演示版本：本入口仅展示导入所需资料与去向，不读取文件内容。</div>
         </div>

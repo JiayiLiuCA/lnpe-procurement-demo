@@ -17,10 +17,12 @@ import { ContractLinesTable } from "@/components/pc/ContractLinesTable";
 import { VersionList } from "@/components/pc/VersionList";
 import { ReceivingRecord } from "@/components/pc/ReceivingRecord";
 import { AiSimDialog } from "@/components/ai/AiSimDialog";
-import { contractSubPill } from "@/components/pc/ContractCard";
+import { ContractLane, contractSubPill } from "@/components/pc/ContractCard";
 import { useAppStore } from "@/store/useAppStore";
 import { overdueContracts } from "@/lib/derive";
+import { CONTRACT_STAGE_LABEL, contractStage } from "@/lib/steps";
 import type { Contract, MilestoneKey } from "@/lib/types";
+import type { ContractStage } from "@/lib/steps";
 import { daysUntil } from "@/lib/date";
 import { exclTax } from "@/lib/money";
 import {
@@ -41,14 +43,14 @@ import { TODAY } from "@/lib/date";
 
 type TabKey = "follow" | "info" | "review";
 
-/** 执行状态卡：交货逾期时只做提醒（红头 + 交货期 + 逾期天数），不提供催办动作，也不记录沟通 */
-function ExecStatusCard({ c, overdue }: { c: Contract; overdue: number }) {
+/** 交货跟进卡：交货逾期时只做提醒（红头 + 交货期 + 逾期天数），不提供催办动作，也不记录沟通 */
+function ExecStatusCard({ c, overdue, stage }: { c: Contract; overdue: number; stage: ContractStage }) {
   if (overdue > 0) {
     return (
       <div className="rounded-card overflow-hidden border border-[#F0C9C4] bg-white">
         <div className="bg-danger-bg flex items-center gap-2 px-4.5 py-3">
           <AlertTriangle size={16} strokeWidth={1.8} className="text-danger-deep" />
-          <div className="text-danger-deep text-sm font-bold">执行状态 · 交货逾期</div>
+          <div className="text-danger-deep text-sm font-bold">交货跟进 · 交货逾期</div>
         </div>
         <div className="flex flex-col gap-2.5 px-4.5 py-3.5">
           <div className="flex justify-between text-[13px]">
@@ -67,10 +69,14 @@ function ExecStatusCard({ c, overdue }: { c: Contract; overdue: number }) {
 
   return (
     <div className="border-line rounded-card flex flex-col gap-2.5 border bg-white px-4.5 py-3.5">
-      <div className="text-sm font-bold">执行状态</div>
+      <div className="text-sm font-bold">交货跟进</div>
       <div className="flex justify-between text-[13px]">
         <span className="text-sub">当前状态</span>
         <span className="font-medium">{CONTRACT_STATUS_LABEL[c.status]}</span>
+      </div>
+      <div className="flex justify-between text-[13px]">
+        <span className="text-sub">所处步骤</span>
+        <span className="font-medium">{CONTRACT_STAGE_LABEL[stage]}</span>
       </div>
       {c.deliveryDate && (
         <div className="flex justify-between text-[13px]">
@@ -124,6 +130,7 @@ export default function ContractDetailPage() {
   const partial = deliveryNotes.some((n) => n.contractIds.includes(c.id) && n.status === "in_progress");
   const sub = contractSubPill(c, partial);
   const overdue = overdueContracts([c], deliveryNotes).length > 0 ? -daysUntil(c.deliveryDate!) : 0;
+  const stage = contractStage(c, deliveryNotes);
   const advanceLabel = nextAction(c.status);
   const invMilestone = invoiceMKey ? c.milestones.find((m) => m.key === invoiceMKey) : null;
   const invMilestoneAmount = invMilestone && total != null ? milestoneAmount(total, invMilestone.ratio) : 0;
@@ -185,6 +192,10 @@ export default function ContractDetailPage() {
             </div>
           </div>
           <div className="flex-1" />
+          <div className="flex w-[300px] shrink-0 flex-col gap-2 pr-6">
+            <ContractLane stage={stage} danger={overdue > 0} withLabels />
+            <MilestoneBar milestones={c.milestones} height={8} withLabels />
+          </div>
           <div className="flex shrink-0 gap-7 text-right">
             <div>
               <div className="text-sub text-xs">含税总额（13%）</div>
@@ -260,7 +271,7 @@ export default function ContractDetailPage() {
             </div>
 
             <div className="flex min-w-0 flex-1 flex-col gap-3.5">
-              <ExecStatusCard c={c} overdue={overdue} />
+              <ExecStatusCard c={c} overdue={overdue} stage={stage} />
 
               <div className="border-line rounded-card flex flex-col gap-2.5 border bg-white px-4.5 py-3.5">
                 <div className="flex items-center justify-between">

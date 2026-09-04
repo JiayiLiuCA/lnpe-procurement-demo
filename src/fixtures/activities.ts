@@ -19,7 +19,7 @@ export const activities: Activity[] = [
   // 两个前期项目
   { id: "a-14", projectId: "p-260812", text: "技术部已排期：第一批采购清单预计 08-28 提交", at: "08-15 14:10", actor: "肖济忠", tone: "neutral" },
   { id: "a-15", projectId: "p-260812", text: "订单合同 v1 客户签章版入库，AI 抓取 8 项重要条目", at: "08-12 09:40", actor: "赵小燕", tone: "neutral" },
-  { id: "a-16", projectId: "p-260706", text: "库存核对：主轴轴承、密封件包已分配，耐磨衬板部分分配 12/32", at: "08-18 10:05", actor: "敬宏", tone: "neutral" },
+  { id: "a-16", projectId: "p-260706", text: "订货安排：主轴轴承、密封件包已分配，耐磨衬板部分分配 12/32", at: "08-18 10:05", actor: "敬宏", tone: "neutral" },
   { id: "a-17", projectId: "p-260706", text: "第一批采购清单提交审核 · 待核对 5 项", at: "08-14 16:30", actor: "肖济忠", tone: "neutral" },
   { id: "a-18", projectId: "p-260706", text: "订单合同 v2 技术协议附件补签", at: "07-21 11:00", actor: "敬宏", tone: "neutral" },
 ];

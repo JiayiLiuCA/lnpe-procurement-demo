@@ -1,6 +1,6 @@
 "use client";
 
-// 采购清单详情（独立路由保留，供历史链接直达；日常入口在项目详情「采购清单」阶段）
+// 采购清单详情（独立路由保留，供历史链接直达；日常入口在项目详情的采购清单 / 订货安排 / 子合同三步，这里是全部动作的 full 模式）
 import { useParams } from "next/navigation";
 import { Topbar, Crumb, CrumbLink } from "@/components/shell/Topbar";
 import { ChecklistWorkspace } from "@/components/pc/ChecklistWorkspace";

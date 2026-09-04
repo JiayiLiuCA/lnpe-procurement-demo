@@ -486,7 +486,7 @@ export const useAppStore = create<AppState>()(
             todos: [...st.todos, ...newTodos],
           };
         });
-        get().pushToast("已提交，已同步 PC 端合同跟进");
+        get().pushToast("已提交，已同步 PC 端现场收货");
       },
 
       runCostForecast: () => set({ costForecastAt: TODAY }),
