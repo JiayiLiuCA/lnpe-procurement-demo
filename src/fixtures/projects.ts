@@ -1,24 +1,20 @@
-import type { Project } from "@/lib/types";
+import type { Project, TermChange } from "@/lib/types";
 
-// 项目合同的标准条款，项目合同详情页展示用
-export const ORDER_TERMS = [
-  {
-    title: "第 3 条 · 交货与安装调试",
-    body: "卖方（绵阳流能粉体设备有限公司）应于合同约定交货期内将全部设备运抵买方指定现场，并负责指导安装与调试；发货前 3 个工作日书面通知买方到货时间。",
-  },
-  {
-    title: "第 5 条 · 验收",
-    body: "设备安装调试完成后进行 72 小时连续负荷试车，各项性能指标达到技术协议要求即为验收合格，双方签署《交付验收合格单》。买方无正当理由拖延验收超过 30 日的，视同验收合格。",
-  },
-  {
-    title: "第 7 条 · 付款方式",
-    body: "买方按以下节点向卖方付款：①合同签订后 10 个工作日内支付预付款 30%；②设备到场验收合格后支付 60%；③质保金 10%，质保期满无质量问题后 30 日内付清。卖方每笔收款前开具等额 13% 增值税专用发票。",
-  },
-  {
-    title: "第 8 条 · 质保",
-    body: "质保期为验收合格之日起 12 个月。质保期内因设计、制造质量引起的故障，卖方在接到通知后 48 小时内响应、5 日内到场处理；易损件按图纸清单免费随机备货一套。",
-  },
+/** 把某版的变更套到重要条目上（keyTerms 永远是「当前值」，原值留在 versions[].changes 里） */
+function applyChanges(terms: { label: string; value: string }[], changes: TermChange[]) {
+  return terms.map((t) => {
+    const c = changes.find((x) => x.label === t.label);
+    return c ? { ...t, value: c.to } : t;
+  });
+}
+
+// 260706 v2 技术协议附件：补了在线粒度检测仪，验收加了粒度与产能指标
+const CHANGES_260706_V2: TermChange[] = [
+  { label: "交付范围", from: "磷酸铁锂二次粉碎分级线成套设备（含脉冲除尘与螺旋输送）", to: "磷酸铁锂二次粉碎分级线成套设备（含脉冲除尘、螺旋输送、在线粒度检测仪）" },
+  { label: "验收方式", from: "72 小时连续负荷试车", to: "72 小时连续负荷试车 · 成品 D50 1.0–1.5μm、产能 ≥ 1.2 t/h" },
 ];
+// 251230 v2 补充协议：交货期顺延一个月
+const CHANGES_251230_V2: TermChange[] = [{ label: "交货期", from: "2026-05-30", to: "2026-06-30" }];
 
 /** 各项目共用的 AI 抓取条款模板（交付范围与日期按项目差异化） */
 function keyTerms(amount: string, delivery: string, scope: string) {
@@ -71,9 +67,9 @@ export const projects: Project[] = [
       deliveryDeadline: "2026-11-15",
       versions: [
         { id: "v1", name: "v1 客户签章版", at: "2026-07-06", by: "敬宏 上传", final: true },
-        { id: "v2", name: "v2 技术协议附件补签", at: "2026-07-21", by: "敬宏 上传" },
+        { id: "v2", name: "v2 技术协议附件补签", at: "2026-07-21", by: "敬宏 上传", changes: CHANGES_260706_V2 },
       ],
-      keyTerms: keyTerms("¥8,650,000", "2026-11-15", "磷酸铁锂二次粉碎分级线成套设备（含脉冲除尘与螺旋输送）"),
+      keyTerms: applyChanges(keyTerms("¥8,650,000", "2026-11-15", "磷酸铁锂二次粉碎分级线成套设备（含脉冲除尘与螺旋输送）"), CHANGES_260706_V2),
     },
   },
   {
@@ -146,7 +142,7 @@ export const projects: Project[] = [
       deliveryDeadline: "2026-06-30",
       versions: [
         { id: "v1", name: "v1 客户签章版", at: "2025-12-30", by: "赵小燕 上传", final: true },
-        { id: "v2", name: "v2 补充协议（交货期顺延）", at: "2026-03-18", by: "赵小燕 上传" },
+        { id: "v2", name: "v2 补充协议（交货期顺延）", at: "2026-03-18", by: "赵小燕 上传", changes: CHANGES_251230_V2 },
       ],
       keyTerms: keyTerms("¥6,800,000", "2026-06-30", "二期粉体分级系统成套设备"),
     },

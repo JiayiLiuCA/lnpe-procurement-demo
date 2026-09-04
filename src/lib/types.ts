@@ -1,5 +1,12 @@
 // 全部实体类型定义（demo 数据模型）
 
+/** 某个版本相对上一版的条款变更（项目合同的补充协议 / 附件由 AI 抓取） */
+export interface TermChange {
+  label: string;
+  from: string;
+  to: string;
+}
+
 export interface Version {
   id: string;
   name: string;
@@ -7,9 +14,10 @@ export interface Version {
   by: string;
   ai?: boolean;
   final?: boolean;
+  changes?: TermChange[];
 }
 
-/** 项目合同（客户签章的 xlsx）：可查看条款、更新版本、下载 */
+/** 项目合同（客户签章的 xlsx）：订单接收步查看原件、上传新版（补充协议）、下载；重要条目由 AI 抓取，新版的变更记在 versions[].changes */
 export interface OrderContract {
   fileName: string;
   no: string;

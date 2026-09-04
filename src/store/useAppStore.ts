@@ -17,7 +17,7 @@ import type {
   Project,
   Todo,
 } from "@/lib/types";
-import { TODAY, fmtDate } from "@/lib/date";
+import { TODAY, addDays, fmtDate } from "@/lib/date";
 import { CONTRACT_STATUS_ORDER, deriveArrivalDeadlines } from "@/lib/rules";
 import { projects as seedProjects } from "@/fixtures/projects";
 import { checklist20260510 } from "@/fixtures/checklist-20260510";
@@ -309,20 +309,44 @@ export const useAppStore = create<AppState>()(
         get().pushToast(`项目 ${p.code} 已关闭，信息仍可查看`);
       },
 
-      addOrderContractVersion: (projectId) =>
+      // 上传项目合同新版（演示：当作一份交货期顺延 30 天的补充协议，AI 抓取变更、同步截止日与重要条目）
+      addOrderContractVersion: (projectId) => {
+        const p = get().projects.find((x) => x.id === projectId);
+        if (!p) return;
+        const n = p.orderContract.versions.length + 1;
+        const from = p.orderContract.deliveryDeadline;
+        const to = addDays(from, 30);
         set((s) => ({
-          projects: s.projects.map((p) => {
-            if (p.id !== projectId) return p;
-            const n = p.orderContract.versions.length + 1;
+          projects: s.projects.map((x) => {
+            if (x.id !== projectId) return x;
             return {
-              ...p,
+              ...x,
+              deliveryDeadline: to,
               orderContract: {
-                ...p.orderContract,
-                versions: [...p.orderContract.versions, { id: `v${n}`, name: `v${n} 更新版`, at: TODAY, by: "赵小燕 上传" }],
+                ...x.orderContract,
+                deliveryDeadline: to,
+                keyTerms: x.orderContract.keyTerms.map((k) => (k.label === "交货期" ? { ...k, value: to } : k)),
+                versions: [
+                  ...x.orderContract.versions,
+                  { id: `v${n}`, name: `v${n} 补充协议（交货期顺延）`, at: TODAY, by: "赵小燕 上传", changes: [{ label: "交货期", from, to }] },
+                ],
               },
             };
           }),
-        })),
+          activities: [
+            {
+              id: `a-oc-${projectId}-v${n}`,
+              projectId,
+              text: `项目合同 v${n} 补充协议入库，AI 抓取到交货期 ${from} → ${to}`,
+              at: `${fmtDate(TODAY)} · 刚刚`,
+              actor: "赵小燕",
+              tone: "neutral" as const,
+            },
+            ...s.activities,
+          ],
+        }));
+        get().pushToast(`项目合同已更新至 v${n}：AI 抓取到交货期顺延至 ${to}`);
+      },
 
       updateLinePrice: (contractId, lineId, price) =>
         set((s) => ({

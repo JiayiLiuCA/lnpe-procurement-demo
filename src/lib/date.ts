@@ -19,6 +19,12 @@ export function overdueDays(past: string, from: string = TODAY): number {
   return Math.round((toUtc(from) - toUtc(past)) / DAY_MS);
 }
 
+export function addDays(d: string, days: number): string {
+  const t = new Date(`${d}T00:00:00Z`);
+  t.setUTCDate(t.getUTCDate() + days);
+  return t.toISOString().slice(0, 10);
+}
+
 export function addMonths(d: string, months: number): string {
   const [y, m, day] = d.split("-").map(Number);
   const total = y * 12 + (m - 1) + months;
