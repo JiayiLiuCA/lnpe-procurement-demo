@@ -436,7 +436,7 @@ export default function ProjectDetailPage() {
                     查看全部
                   </Link>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   {[...contracts]
                     .sort((a, b) => Number(isSignedContract(a)) - Number(isSignedContract(b)))
                     .map((c) => (
@@ -482,7 +482,7 @@ export default function ProjectDetailPage() {
                 <div className="text-[15px] font-bold">
                   在途子合同 <span className="text-sub text-[12.5px] font-normal">{delivering.length} 份 · 按交货期排序</span>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   {delivering.map((c) => (
                     <ContractCard key={c.id} contract={c} partialArrived={false} />
                   ))}
