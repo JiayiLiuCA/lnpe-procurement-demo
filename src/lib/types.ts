@@ -1,5 +1,6 @@
 // 全部实体类型定义（demo 数据模型）
 
+/** 子合同的一个版本（AI 初稿 / 人工修订 / 定稿回读 / 签章版）：每版由 AI 抓取重要条目，keyTerms 缺省时按合同当前字段现算 */
 export interface Version {
   id: string;
   name: string;
@@ -7,6 +8,8 @@ export interface Version {
   by: string;
   ai?: boolean;
   final?: boolean;
+  aiAt?: string;
+  keyTerms?: KeyTerm[];
 }
 
 /** AI 从项目合同抓取的一项重要条目 */
@@ -103,15 +106,33 @@ export interface Sheet {
   rows: ChecklistRow[];
 }
 
+/** 清单的一个版本：技术部发来的表都已经过其内部审核，采购软件里只留「批准」一个入口；修正版重新批准 */
+export interface ChecklistVersion {
+  id: string;
+  name: string;
+  at: string;
+  by: string;
+  fileName: string;
+  /** AI 解析入库的明细行数 */
+  rows: number;
+  /** 相对上一版的变更摘要（首版无） */
+  changes?: string;
+  approveAt?: string;
+  approvedBy?: string;
+}
+
+/** 一个批次 = 一份清单；追加的批次是新的 Checklist（batchNo 递增），修正是同一批次上的新版本 */
 export interface Checklist {
   id: string;
   projectId: string;
   batchNo: number;
   title: string;
+  /** 最新版文件名（与 versions 末项一致） */
   fileName: string;
-  version: string;
-  status: "制表中" | "待审核" | "已批准";
-  signoff: { maker: string; makerAt: string; reviewAt?: string; approveAt?: string };
+  /** 最新版是否已批准（= versions 末项有 approveAt） */
+  status: "待批准" | "已批准";
+  signoff: { maker: string; makerAt: string; approveAt?: string; approvedBy?: string };
+  versions: ChecklistVersion[];
   globalNote: string;
   sheets: Sheet[];
 }
@@ -210,7 +231,7 @@ export interface DeliveryNote {
   lines: DeliveryLine[];
 }
 
-export type TodoKind = "review" | "ai_draft" | "payment_due" | "delivery_overdue" | "receive_exception";
+export type TodoKind = "approve" | "ai_draft" | "payment_due" | "delivery_overdue" | "receive_exception";
 
 export interface Todo {
   id: string;

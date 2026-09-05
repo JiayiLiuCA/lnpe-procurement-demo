@@ -1,21 +1,55 @@
 import type { Checklist } from "@/lib/types";
-import { buildRows } from "./checklist-20260510";
+import { APPEND_BATCH_SPECS, appendBatchSheets, buildRows, type RowSpec } from "./checklist-20260510";
 
 // 其余项目的采购清单：行状态与各自合同的覆盖关系保持一致，
 // 供项目统计（总需采购/库存已分配/覆盖）与合同覆盖进度条派生。
 
-// 260706 青海泰丰磷酸铁锂二粉线：第一批已提交待审核，12 行 = 2 全分配 + 1 部分 + 3 需采购 + 1 安排生产 + 5 待核对，尚无合同
+// 20260510 德阳锂电正极材料一期 · 追加第二批（电气元件 + 自制钣金件）：06-10 入库、06-12 批准，订货安排已完成——
+// 变频器 / PLC / 触摸屏 需采购、软启动器 库存已分配、控制柜柜体与桥架 安排生产；需采购 3 项尚未入合同（与第一批的 6 项合计待出合同 9 项，项目停在订货安排步）
+const BATCH2_STATE: Record<string, RowSpec["st"] | ["m", string]> = {
+  变频器: "n",
+  "PLC 控制器": "n",
+  触摸屏: "n",
+  软启动器: "a",
+  控制柜柜体: ["m", "2026-07-20"],
+  电缆桥架: ["m", "2026-07-20"],
+};
+const cl20260510b: Checklist = {
+  id: "cl-20260510-2",
+  projectId: "p-20260510",
+  batchNo: 2,
+  title: "20260510 采购清单 · 追加第二批",
+  fileName: "20260510采购清单-追加(6.10).xls",
+  status: "已批准",
+  signoff: { maker: "肖济忠", makerAt: "2026-06-10", approveAt: "2026-06-12", approvedBy: "赵小燕" },
+  versions: [{ id: "v1", name: "v1 技术部初版", at: "2026-06-10", by: "肖济忠 制表", fileName: "20260510采购清单-追加(6.10).xls", rows: 6, approveAt: "2026-06-12", approvedBy: "赵小燕" }],
+  globalNote: "追加批次：电气元件品牌按第一批「电气资料及要求」执行（断路器 / 接触器 施耐德或 ABB，变频器 汇川或西门子，PLC 西门子 S7-1200 及以上）；控制柜柜体与桥架为公司自制，计划 07-20 完工；本批需采购项与第一批合并出合同。",
+  sheets: APPEND_BATCH_SPECS.map((t, i) => ({
+    id: `s0510b-${i + 1}`,
+    name: t.name,
+    rows: buildRows(
+      `s0510b-${i + 1}`,
+      t.specs.map((sp) => {
+        const st = BATCH2_STATE[sp.name] ?? "w";
+        return Array.isArray(st) && st[0] === "m" ? { ...sp, st: "m" as const, produceBy: st[1] } : { ...sp, st: st as RowSpec["st"] };
+      }),
+    ),
+  })),
+};
+
+// 260706 青海泰丰磷酸铁锂二粉线：第一批已批准、订货安排进行中，12 行 = 2 全分配 + 1 部分 + 3 需采购 + 1 安排生产 + 5 待核对，尚无合同；
+// 追加第二批（电气元件与自制钣金件）08-19 上传入库，待批准 → 项目停在「采购清单」步（待批准 1 批）
 const cl260706: Checklist = {
   id: "cl-260706-1",
   projectId: "p-260706",
   batchNo: 1,
   title: "260706 采购清单 · 第一批",
   fileName: "260706采购清单(8.14).xls",
-  version: "8.14（v1）",
-  status: "待审核",
-  signoff: { maker: "肖济忠", makerAt: "2026-08-14" },
+  status: "已批准",
+  signoff: { maker: "肖济忠", makerAt: "2026-08-14", approveAt: "2026-08-15", approvedBy: "赵小燕" },
+  versions: [{ id: "v1", name: "v1 技术部初版", at: "2026-08-14", by: "肖济忠 制表", fileName: "260706采购清单(8.14).xls", rows: 12, approveAt: "2026-08-15", approvedBy: "赵小燕" }],
   globalNote:
-    "全局要求：与物料接触部位全部 S30408 不锈钢，内壁喷涂 ETFE 0.3mm，禁用 Cu、Zn 材质；磷酸铁锂成品粒径 D50 1.0–1.5μm，分级轮须做动平衡（G2.5）；本批为主机与标准件，第二批（电气元件与自制钣金件）技术部预计 8 月底出，届时合并出合同；待核对行为库存尚未盘点条目，核对完成后再提交批准。",
+    "全局要求：与物料接触部位全部 S30408 不锈钢，内壁喷涂 ETFE 0.3mm，禁用 Cu、Zn 材质；磷酸铁锂成品粒径 D50 1.0–1.5μm，分级轮须做动平衡（G2.5）；本批为主机与标准件，电气元件与自制钣金件见追加第二批，届时合并出合同；待核对行为库存尚未盘点条目。",
   sheets: [
     {
       id: "s706-1",
@@ -148,10 +182,24 @@ const cl260706: Checklist = {
       infoText: `1. 电气元件品牌要求与 20260510 项目一致：低压断路器、接触器采用施耐德/ABB；变频器采用汇川/西门子；PLC 采用西门子 S7-1200 系列及以上。
 2. 所有电机须满足 GB18613-2020 一级能效；30KW 及以上电机配变频启动。
 3. 现场仪表统一 4–20mA 信号，防护等级不低于 IP65；粉尘环境仪表接液部位 304 及以上。
-4. 电气元件清单（含品牌型号、数量）与控制柜图纸由技术部随第二批采购清单一并提供，本批暂不采购。`,
+4. 电气元件清单（含品牌型号、数量）与控制柜图纸由技术部随追加第二批采购清单提供，本批暂不采购。`,
       rows: [],
     },
   ],
+};
+
+// 260706 追加第二批：电气元件 4 行 + 自制钣金件 2 行，08-19 上传入库待批准（批准前不进订货安排）
+const cl260706b: Checklist = {
+  id: "cl-260706-2",
+  projectId: "p-260706",
+  batchNo: 2,
+  title: "260706 采购清单 · 追加第二批",
+  fileName: "260706采购清单-追加(8.19).xls",
+  status: "待批准",
+  signoff: { maker: "肖济忠", makerAt: "2026-08-19" },
+  versions: [{ id: "v1", name: "v1 技术部初版", at: "2026-08-19", by: "肖济忠 制表", fileName: "260706采购清单-追加(8.19).xls", rows: 6 }],
+  globalNote: "追加批次：电气元件品牌要求见第一批「电气资料及要求」；控制柜柜体与桥架为公司自制，随第一批钣金件一并排产；本批与第一批需采购项合并出合同。",
+  sheets: appendBatchSheets("s706b"),
 };
 
 // 251230 乐山协鑫二期：8 行 = 3 全分配 + 5 需采购（全部入 c-hongtai，覆盖 100%，项目停在现场收货）
@@ -161,9 +209,9 @@ const cl251230: Checklist = {
   batchNo: 1,
   title: "251230 采购清单 · 第一批",
   fileName: "251230采购清单(1.24).xls",
-  version: "1.24（v1）",
   status: "已批准",
-  signoff: { maker: "肖济忠", makerAt: "2026-01-15", reviewAt: "2026-01-20", approveAt: "2026-01-24" },
+  signoff: { maker: "肖济忠", makerAt: "2026-01-15", approveAt: "2026-01-24", approvedBy: "赵小燕" },
+  versions: [{ id: "v1", name: "v1 技术部初版", at: "2026-01-15", by: "肖济忠 制表", fileName: "251230采购清单(1.24).xls", rows: 8, approveAt: "2026-01-24", approvedBy: "赵小燕" }],
   globalNote:
     "全局要求：钣金结构件外表面喷砂除锈达 Sa2.5 级后喷涂环氧底漆两道、聚氨酯面漆两道；平台钢结构热镀锌件锌层 ≥85μm；大件运输前与现场确认吊装口与运输限高。",
   sheets: [
@@ -265,9 +313,9 @@ const cl251102: Checklist = {
   batchNo: 1,
   title: "251102 采购清单 · 第一批",
   fileName: "251102采购清单(11.06).xls",
-  version: "11.06（v1）",
   status: "已批准",
-  signoff: { maker: "肖济忠", makerAt: "2025-11-03", reviewAt: "2025-11-05", approveAt: "2025-11-06" },
+  signoff: { maker: "肖济忠", makerAt: "2025-11-03", approveAt: "2025-11-06", approvedBy: "赵小燕" },
+  versions: [{ id: "v1", name: "v1 技术部初版", at: "2025-11-03", by: "肖济忠 制表", fileName: "251102采购清单(11.06).xls", rows: 4, approveAt: "2025-11-06", approvedBy: "赵小燕" }],
   globalNote:
     "全局要求：一期钣金结构件表面处理与二期同标准执行；项目已于 2026-07-31 关闭，本清单为归档记录，全部条目已完成采购与收货。",
   sheets: [
@@ -320,4 +368,4 @@ const cl251102: Checklist = {
   ],
 };
 
-export const extraChecklists: Checklist[] = [cl260706, cl251230, cl251102];
+export const extraChecklists: Checklist[] = [cl20260510b, cl260706, cl260706b, cl251230, cl251102];

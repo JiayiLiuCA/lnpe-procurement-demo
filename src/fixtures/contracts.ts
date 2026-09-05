@@ -1,4 +1,5 @@
 import type { Contract, Milestone, MilestoneStatus, Version } from "@/lib/types";
+import { seedVersionTerms } from "@/lib/contractTerms";
 
 // 里程碑标准四段：10/50/30/10，金额一律由 total×ratio 派生，不落库
 function ms(
@@ -20,7 +21,7 @@ function v(id: string, name: string, at: string, by: string, extra?: Partial<Ver
   return { id, name, at, by, ...extra };
 }
 
-export const contracts: Contract[] = [
+const raw: Contract[] = [
   {
     id: "c-fengjie",
     no: "LNPE-20260601008-SJ",
@@ -249,3 +250,9 @@ export const contracts: Contract[] = [
     sellerContactPhone: "13778215509",
   },
 ];
+
+// 每一版子合同都由 AI 抓取重要条目：签章版 / 最新版 = 合同当前字段；早期版本回拨交货期等制造版本间变更
+export const contracts: Contract[] = raw.map((c) => ({
+  ...c,
+  versions: c.versions.map((v, i) => ({ ...v, aiAt: v.aiAt ?? v.at, keyTerms: v.keyTerms ?? seedVersionTerms(c, i, c.versions.length) })),
+}));

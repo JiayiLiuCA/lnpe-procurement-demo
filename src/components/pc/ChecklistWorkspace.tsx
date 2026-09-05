@@ -1,18 +1,20 @@
 "use client";
 
 // 采购清单工作区：同一张清单表在三个步骤复用，只换顶部汇总与底部动作——
-//  review   步骤 2 采购清单：签核（审核通过 / 批准）、版本、下载；表只读
-//  source   步骤 3 订货安排：逐行标记 库存分配 / 安排生产 / 需采购；顶部来源汇总
-//  contract 步骤 4 子合同：勾需采购行 AI 生成初稿 / 上传合同；顶部合同覆盖
-//  full     独立路由 /checklists/[id]：全部动作
-import { useMemo, useRef, useState } from "react";
+//  review   步骤 2 采购清单：只读校对 AI 解析的明细（不显示订货安排 / 合同列）；清单头由 ChecklistStep 的清单卡承担，这里不再画
+//  source   步骤 3 订货安排：逐行标记 库存分配 / 安排生产 / 需采购，需采购行直接 AI 生成初稿 / 上传已签合同；
+//           顶部一张卡放来源分桶 + 合同覆盖（2026-09-04 起出合同并入本步，步骤 4 只剩合同卡）
+//  full     独立路由 /checklists/[id]：同 source，多清单头上的下载 / 上传新版本 / 批准
+// 批准只在步骤 2 的清单卡上做；步骤 3 的清单头只留标题 + 「已批准 · v2 · 日期」标签 + 文件名。
+// 全局技术要求（globalNote）不再单独画黄条：它属于清单文件本身，在「查看原件」的 Excel 预览与解析弹窗里看。
+// toolbar：宿主页塞进清单头的辅助入口（项目页的批次切换 / 查看库存），紧跟标题之后。
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Check, CircleAlert, Download, UploadCloud } from "lucide-react";
+import { Check, Download, UploadCloud } from "lucide-react";
 import type { Checklist, ChecklistRow } from "@/lib/types";
 import { Btn } from "@/components/ui/Btn";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { TabBar } from "@/components/ui/TabBar";
-import { CollapsibleText } from "@/components/ui/CollapsibleText";
 import { ChecklistTable, type RowFilter } from "./ChecklistTable";
 import { SelectionFooter } from "./SelectionFooter";
 import { AiSimDialog } from "@/components/ai/AiSimDialog";
@@ -26,35 +28,16 @@ import { fmtNum } from "@/lib/money";
 import { draftSteps, matchSupplier } from "@/fixtures/ai/contract-template";
 import { supplierById } from "@/fixtures/suppliers";
 
-export type WorkspaceMode = "review" | "source" | "contract" | "full";
+export type WorkspaceMode = "review" | "source" | "full";
 
-/** 签核节点：已签 = 绿勾 + 日期；当前待签 = 青圈；之后的 = 灰圈 */
-function SignNode({ label, at, current }: { label: string; at?: string; current?: boolean }) {
-  return (
-    <div className="flex flex-col items-center gap-1">
-      <div className="flex items-center gap-1.5">
-        {at ? (
-          <span className="bg-success flex h-4 w-4 items-center justify-center rounded-full">
-            <Check size={9} strokeWidth={3.4} className="text-white" />
-          </span>
-        ) : (
-          <span className={`h-4 w-4 rounded-full border-2 ${current ? "border-info" : "border-line"}`} />
-        )}
-        <span className={`text-[12.5px] font-medium ${at || current ? "" : "text-faint"}`}>{label}</span>
-      </div>
-      <span className="text-faint text-[11px]">{at ? fmtDate(at) : current ? "待签" : "—"}</span>
-    </div>
-  );
-}
-
-export function ChecklistWorkspace({ checklist, mode = "full" }: { checklist: Checklist; mode?: WorkspaceMode }) {
+export function ChecklistWorkspace({ checklist, mode = "full", toolbar }: { checklist: Checklist; mode?: WorkspaceMode; toolbar?: ReactNode }) {
   const cl = checklist;
   const router = useRouter();
   const project = useAppStore((s) => s.projects.find((p) => p.id === cl.projectId));
   const markAllocation = useAppStore((s) => s.markAllocation);
   const generateDraftContracts = useAppStore((s) => s.generateDraftContracts);
   const markProduction = useAppStore((s) => s.markProduction);
-  const signoffChecklist = useAppStore((s) => s.signoffChecklist);
+  const approveChecklist = useAppStore((s) => s.approveChecklist);
   const pushToast = useAppStore((s) => s.pushToast);
 
   const [activeSheet, setActiveSheet] = useState<string>(cl.sheets[0]?.id ?? "s1");
@@ -68,19 +51,21 @@ export function ChecklistWorkspace({ checklist, mode = "full" }: { checklist: Ch
   const sheet = cl.sheets.find((s) => s.id === activeSheet) ?? cl.sheets[0];
   const stats = checklistStats(cl);
   const coverPct = stats.need > 0 ? Math.round((stats.contracted / stats.need) * 100) : 100;
-  // 来源分配的互斥分桶（部分分配单列，避免库存 / 需采购重复计数）
+  // 去向的互斥分桶：库存分配 / 部分分配 / 安排生产 / 需采购（尚未入合同）/ 已入合同 / 待核对
   const buckets = {
     allocated: allRows.filter((r) => r.alloc.status === "allocated").length,
     partial: allRows.filter((r) => r.alloc.status === "partial").length,
-    need: allRows.filter((r) => r.alloc.status === "need").length,
     produce: allRows.filter((r) => r.alloc.status === "produce").length,
+    need: allRows.filter((r) => (r.alloc.status === "need" || r.alloc.status === "partial") && !r.contractId).length,
+    contracted: allRows.filter((r) => !!r.contractId).length,
     pending: allRows.filter((r) => r.alloc.status === "pending").length,
   };
-  const showSignoff = mode === "review" || mode === "full";
+  const uncovered = stats.need - stats.contracted;
+  const showHeader = mode !== "review";
   const showSource = mode === "source" || mode === "full";
-  const showCoverage = mode === "contract" || mode === "full";
   const readOnly = mode === "review";
-  const initialFilter: RowFilter = mode === "source" ? (stats.pending > 0 ? "pending" : "all") : mode === "contract" ? "uncovered" : "all";
+  // 进入时先看待核对；核对完了看需采购（尚未出合同）；都没有就全量
+  const initialFilter: RowFilter = readOnly ? "all" : stats.pending > 0 ? "pending" : uncovered > 0 ? "need" : "all";
 
   // AI 预估采购额：需采购行（含部分分配）按预估单价 × 需采购数；自制、已分配、待核对不计
   const { estimateFor } = usePartsCatalog();
@@ -124,73 +109,59 @@ export function ChecklistWorkspace({ checklist, mode = "full" }: { checklist: Ch
     return [...map.entries()];
   })();
 
-  const signoffAction =
-    showSignoff && cl.status !== "已批准" ? (
-      !cl.signoff.reviewAt ? (
-        <Btn
-          variant="primary"
-          size="sm"
-          onClick={() => {
-            signoffChecklist(cl.id, "review");
-            pushToast("清单审核通过，待批准");
-          }}
-        >
-          <Check size={13} strokeWidth={2.4} />
-          审核通过
-        </Btn>
-      ) : (
-        <Btn
-          variant="primary"
-          size="sm"
-          onClick={() => {
-            signoffChecklist(cl.id, "approve");
-            pushToast("清单已批准，进入订货安排");
-          }}
-        >
-          <Check size={13} strokeWidth={2.4} />
-          批准
-        </Btn>
-      )
-    ) : null;
+  const latestVersion = cl.versions[cl.versions.length - 1];
 
   return (
     <div className="flex flex-col gap-3.5">
-      {/* 清单头：标题 + 签核 + 文件操作 */}
-      <div className="border-line rounded-card flex items-center gap-5 border bg-white px-5 py-3.5">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2.5">
-            <div className="text-[15px] font-bold">{cl.title}</div>
-            <StatusPill tone={cl.status === "已批准" ? "success" : "warning"}>{cl.status}</StatusPill>
+      {/* 清单头（步骤 3/4 与独立页）：标题 + 批准标签 + 文件名；批准动作只在独立页保留 */}
+      {showHeader && (
+        <div className="border-line rounded-card flex items-center gap-5 border bg-white px-5 py-3.5">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2.5">
+              <div className="text-[15px] font-bold">{cl.title}</div>
+              <StatusPill tone={cl.status === "已批准" ? "success" : "warning"}>
+                {cl.status} · {latestVersion?.id}
+                {cl.signoff.approveAt && ` · ${fmtDate(cl.signoff.approveAt)}`}
+              </StatusPill>
+            </div>
+            <div className="text-sub mt-1 text-xs">
+              {cl.fileName} · 制表 {cl.signoff.maker} {fmtDate(cl.signoff.makerAt)}
+              {project?.deliveryDeadline && ` · 交货期 ${project.deliveryDeadline}`}
+            </div>
           </div>
-          <div className="text-sub mt-1 text-xs">
-            {cl.fileName} · 当前版本 {cl.version}
-            {project?.deliveryDeadline && ` · 交货期 ${project.deliveryDeadline}`} · AI 解析入库 · 人工校对签核
-          </div>
+          {toolbar && <div className="flex shrink-0 items-center gap-2 pl-2">{toolbar}</div>}
+          <div className="flex-1" />
+          {mode === "full" && (
+            <div className="flex shrink-0 gap-2 pl-3">
+              <a href="/samples/checklist-sample.xls" download={cl.fileName}>
+                <Btn variant="secondary" size="sm">
+                  <Download size={13} strokeWidth={1.8} />
+                  下载 xlsx
+                </Btn>
+              </a>
+              <Btn variant="secondary" size="sm" onClick={() => setUploadClOpen(true)}>
+                <UploadCloud size={13} strokeWidth={1.8} />
+                上传新版本
+              </Btn>
+              {cl.status !== "已批准" && (
+                <Btn
+                  variant="primary"
+                  size="sm"
+                  onClick={() => {
+                    approveChecklist(cl.id);
+                    pushToast(`清单 ${latestVersion?.id} 已批准，进入订货安排`);
+                  }}
+                >
+                  <Check size={13} strokeWidth={2.4} />
+                  批准 {latestVersion?.id}
+                </Btn>
+              )}
+            </div>
+          )}
         </div>
-        <div className="flex-1" />
-        <div className="flex shrink-0 items-center">
-          <SignNode label={`制表 ${cl.signoff.maker}`} at={cl.signoff.makerAt} />
-          <div className={`mx-2 mb-4 h-0.5 w-9 ${cl.signoff.reviewAt ? "bg-success" : "bg-line-soft"}`} />
-          <SignNode label="审核" at={cl.signoff.reviewAt} current={!cl.signoff.reviewAt} />
-          <div className={`mx-2 mb-4 h-0.5 w-9 ${cl.signoff.approveAt ? "bg-success" : "bg-line-soft"}`} />
-          <SignNode label="批准" at={cl.signoff.approveAt} current={!!cl.signoff.reviewAt && !cl.signoff.approveAt} />
-        </div>
-        <div className="flex shrink-0 gap-2 pl-3">
-          <a href="/samples/checklist-sample.xls" download={cl.fileName}>
-            <Btn variant="secondary" size="sm">
-              <Download size={13} strokeWidth={1.8} />
-              下载 xlsx
-            </Btn>
-          </a>
-          <Btn variant="secondary" size="sm" onClick={() => setUploadClOpen(true)}>
-            <UploadCloud size={13} strokeWidth={1.8} />
-            上传新版本
-          </Btn>
-          {signoffAction}
-        </div>
-      </div>
+      )}
 
-      {/* 订货安排汇总：库存 / 生产 / 采购 / 待核对 互斥分桶 */}
+      {/* 订货安排汇总（一条）：六个互斥分桶 + 一根分段进度条 + AI 预估；右侧大数字 = 下一件要做的事（待核对 → 需采购 → 已完成） */}
       {showSource && (
         <div className="border-line rounded-card flex items-center gap-4 border bg-white px-5 py-3.5">
           <div className="min-w-0 flex-1">
@@ -206,62 +177,43 @@ export function ChecklistWorkspace({ checklist, mode = "full" }: { checklist: Ch
                   </>
                 )}{" "}
                 · 安排生产 <span className="text-info-deep font-bold">{buckets.produce}</span> · 需采购{" "}
-                <span className="text-warning-deep font-bold">{buckets.need}</span> · 待核对{" "}
+                <span className={`font-bold ${buckets.need > 0 ? "text-warning-deep" : "text-faint"}`}>{buckets.need}</span> · 已入合同{" "}
+                <span className="text-info-deep font-bold">{buckets.contracted}</span>
+                {stats.need > 0 && <span className="text-sub">（{coverPct}%）</span>} · 待核对{" "}
                 <span className={`font-bold ${buckets.pending > 0 ? "text-ink" : "text-faint"}`}>{buckets.pending}</span>
               </span>
-              <span className="text-sub text-xs">勾选行后在底栏标记；需采购项将进入子合同</span>
+              {clEstimate > 0 && (
+                <span className="text-sub text-xs">
+                  AI 预估采购额 <span className="text-ink font-medium tabular-nums">¥{fmtNum(clEstimate)}</span>
+                  {uncoveredEstimate > 0 && `（未入合同 ¥${fmtNum(uncoveredEstimate)}）`}
+                </span>
+              )}
             </div>
             <div className="bg-line-soft mt-2 flex h-2 gap-px overflow-hidden rounded">
               <div className="bg-success" style={{ width: `${((buckets.allocated + buckets.partial) / Math.max(stats.total, 1)) * 100}%` }} />
-              <div className="bg-info" style={{ width: `${(buckets.produce / Math.max(stats.total, 1)) * 100}%` }} />
+              <div className="bg-success/60" style={{ width: `${(buckets.produce / Math.max(stats.total, 1)) * 100}%` }} />
+              <div className="bg-info" style={{ width: `${(buckets.contracted / Math.max(stats.total, 1)) * 100}%` }} />
               <div className="bg-warning" style={{ width: `${(buckets.need / Math.max(stats.total, 1)) * 100}%` }} />
             </div>
           </div>
           <div className="shrink-0 text-right">
-            <div className="text-sub text-xs">待核对</div>
-            <div className={`text-[19px] font-bold tabular-nums ${buckets.pending > 0 ? "text-ink" : "text-success-deep"}`}>{buckets.pending}</div>
+            {buckets.pending > 0 ? (
+              <>
+                <div className="text-sub text-xs">待核对</div>
+                <div className="text-ink text-[19px] font-bold tabular-nums">{buckets.pending}</div>
+              </>
+            ) : buckets.need > 0 ? (
+              <>
+                <div className="text-sub text-xs">需采购</div>
+                <div className="text-warning-deep text-[19px] font-bold tabular-nums">{buckets.need}</div>
+              </>
+            ) : (
+              <>
+                <div className="text-sub text-xs">订货安排</div>
+                <div className="text-success-deep text-[19px] font-bold">已完成</div>
+              </>
+            )}
           </div>
-        </div>
-      )}
-
-      {/* 合同覆盖（子合同步）：需采购项有多少已入合同 */}
-      {showCoverage && (
-        <div className="border-line rounded-card flex items-center gap-4 border bg-white px-5 py-3.5">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2.5 text-[13px]">
-              <span className="font-bold">合同覆盖</span>
-              <span className="text-ink-2">
-                需采购 <span className="text-ink font-bold">{stats.need}</span> · 已入合同{" "}
-                <span className="text-info-deep font-bold">{stats.contracted}</span> · 待出合同{" "}
-                <span className="text-warning-deep font-bold">{stats.need - stats.contracted}</span>
-              </span>
-              <span className="text-sub text-xs">
-                库存已分配 {stats.allocated} 项{stats.produce > 0 && ` · 安排生产 ${stats.produce} 项`}
-                {clEstimate > 0 && (
-                  <>
-                    {" "}
-                    · AI 预估采购额 <span className="text-ink font-medium tabular-nums">¥{fmtNum(clEstimate)}</span>
-                    {uncoveredEstimate > 0 && `（未入合同 ¥${fmtNum(uncoveredEstimate)}）`}
-                  </>
-                )}
-              </span>
-            </div>
-            <div className="bg-line-soft mt-2 flex h-2 overflow-hidden rounded">
-              <div className={coverPct >= 100 ? "bg-success" : "bg-info"} style={{ width: `${coverPct}%` }} />
-            </div>
-          </div>
-          <div className="shrink-0 text-right">
-            <div className="text-sub text-xs">覆盖率</div>
-            <div className={`text-[19px] font-bold tabular-nums ${coverPct >= 100 ? "text-success-deep" : "text-info-deep"}`}>{coverPct}%</div>
-          </div>
-        </div>
-      )}
-
-      {/* 全局要求黄条（电气资料及要求等纯说明 sheet 下不显示） */}
-      {!sheet.infoOnly && (
-        <div className="flex items-center gap-2.5 rounded-[10px] border border-[#EFE1B8] bg-warning-bg px-4 py-2.5">
-          <CircleAlert size={15} strokeWidth={1.8} className="text-warning-deep shrink-0" />
-          <CollapsibleText text={cl.globalNote} className="text-warning-deep flex-1 text-[12.5px]" />
         </div>
       )}
 
@@ -278,7 +230,15 @@ export function ChecklistWorkspace({ checklist, mode = "full" }: { checklist: Ch
           <div className="px-5.5 py-4.5 text-[13px] leading-[2] whitespace-pre-line">{sheet.infoText}</div>
         ) : (
           <>
-            <ChecklistTable key={`${sheet.id}-${mode}`} sheet={sheet} selection={selection} onToggle={toggle} initialFilter={initialFilter} selectable={!readOnly} />
+            <ChecklistTable
+              key={`${sheet.id}-${mode}`}
+              sheet={sheet}
+              selection={selection}
+              onToggle={toggle}
+              initialFilter={initialFilter}
+              selectable={!readOnly}
+              showAlloc={!readOnly}
+            />
             {!readOnly && (
               <div className="sticky bottom-0 z-10">
                 <SelectionFooter
@@ -360,7 +320,7 @@ export function ChecklistWorkspace({ checklist, mode = "full" }: { checklist: Ch
         }}
         disabled={() => groups.length === 0}
       />
-      <ChecklistParseDialog open={uploadClOpen} onClose={() => setUploadClOpen(false)} />
+      <ChecklistParseDialog open={uploadClOpen} onClose={() => setUploadClOpen(false)} projectId={cl.projectId} checklist={cl} />
       <UploadContractDialog
         open={uploadCtOpen}
         onClose={() => {

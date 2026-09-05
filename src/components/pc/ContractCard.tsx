@@ -36,16 +36,16 @@ export function contractSubPill(c: Contract, partialArrived: boolean): { tone: P
     case "warranty":
       return { tone: "info", text: "质保期" };
     case "closed":
-      return { tone: "neutral", text: "已完结" };
+      return { tone: "neutral", text: "已关闭" };
   }
 }
 
-/** 合同货物轨四段：签订 → 交货跟进 → 现场收货 → 完结（与项目步骤 4 / 5 / 6 / 7 对应） */
+/** 合同进度轨四段：签订 → 交货跟进（含现场收货）→ 验收质保（到货后结算）→ 完结。现场收货并入交货跟进，不单列 */
 const LANE: { key: ContractStage; label: string }[] = [
   { key: "draft", label: "签订" },
   { key: "delivering", label: "交货跟进" },
-  { key: "receiving", label: "现场收货" },
-  { key: "settling", label: "完结" },
+  { key: "settling", label: "验收质保" },
+  { key: "closed", label: "订单关闭" },
 ];
 
 /**
@@ -53,8 +53,8 @@ const LANE: { key: ContractStage; label: string }[] = [
  * 已走过的段绿色、当前段青色（逾期 / 异常时红色）、未到的段灰色。
  */
 export function ContractLane({ stage, danger = false, withLabels = false }: { stage: ContractStage; danger?: boolean; withLabels?: boolean }) {
-  // 当前段的下标：草稿在「签订」段；到货结算与完结都落在最后一段（完结 = closed 时全绿）
-  const idx = stage === "draft" ? 0 : stage === "delivering" ? 1 : stage === "receiving" ? 2 : 3;
+  // 当前段的下标：草稿在「签订」段；在途与收货中都在「交货跟进」；到货后的验收 / 质保在「验收质保」；完结 = closed 时全绿
+  const idx = stage === "draft" ? 0 : stage === "delivering" || stage === "receiving" ? 1 : stage === "settling" ? 2 : 3;
   const allDone = stage === "closed";
   return (
     <div className="flex flex-col gap-1">
@@ -167,10 +167,10 @@ export function ContractCard({ contract, partialArrived = false }: { contract: C
         {supplier.name} · {c.summary}
       </div>
 
-      {/* 两条轨：上货物、下款项，都带标签 */}
+      {/* 两条轨：上进度（货物轨）、下款项，都带标签 */}
       <div className="border-line-soft flex flex-col gap-2.5 border-y py-3">
         <div className="flex items-start gap-2.5">
-          <span className="text-faint w-7 shrink-0 pt-px text-[10.5px]">货物</span>
+          <span className="text-faint w-7 shrink-0 pt-px text-[10.5px]">进度</span>
           <div className="min-w-0 flex-1">
             <ContractLane stage={stage} danger={danger} withLabels />
           </div>

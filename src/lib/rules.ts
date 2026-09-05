@@ -45,7 +45,7 @@ export const CONTRACT_STATUS_LABEL: Record<ContractStatus, string> = {
   executing: "执行中",
   arrived: "已到货",
   warranty: "质保期",
-  closed: "已完结",
+  closed: "已关闭",
 };
 
 /** 详情页主按钮文案；null 表示无推进动作。标记已签订后直接进入执行（交货跟进），没有单独的「开始执行」 */
@@ -60,7 +60,7 @@ export function nextAction(status: ContractStatus): string | null {
     case "arrived":
       return "进入质保期";
     case "warranty":
-      return "完结合同";
+      return "订单关闭";
     default:
       return null;
   }

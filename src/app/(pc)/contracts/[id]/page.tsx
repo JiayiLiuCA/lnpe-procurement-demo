@@ -1,28 +1,26 @@
 "use client";
 
-// 合同详情：跟进 / 合同信息 / 校对与版本 三 Tab，接 AI 流程 4（定稿回读）与 5（发票识别）
+// 合同详情：跟进 / 合同与版本 两 Tab，接 AI 流程 4（定稿回读）与 5（发票识别）。
+// 「跟进」= 现在该做什么 + 货物 / 款项合一的纵向时间线（components/pc/ContractTimeline，lib/contractTimeline 派生），右栏 合同文件 / 收货记录 / 经办人。
+// 「合同与版本」= 合同卡 + 版本记录 + AI 重要条目 + 产品明细 + 条款，形式与订单接收步的项目合同卡一致（components/pc/ContractDocSection）。
 import { useState } from "react";
 import { useParams } from "next/navigation";
-import { AlertTriangle, Check, Download, Phone, UploadCloud, X } from "lucide-react";
+import { AlertTriangle, Check, Download, Phone, X } from "lucide-react";
 import { Topbar, Crumb, CrumbLink } from "@/components/shell/Topbar";
 import { Btn } from "@/components/ui/Btn";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { TabBar } from "@/components/ui/TabBar";
 import { Money } from "@/components/ui/Money";
 import { Avatar } from "@/components/ui/Avatar";
-import { MilestoneBar } from "@/components/ui/MilestoneBar";
-import { CountdownChip } from "@/components/ui/CountdownChip";
-import { MilestoneTable } from "@/components/pc/MilestoneTable";
-import { ContractLinesTable } from "@/components/pc/ContractLinesTable";
-import { VersionList } from "@/components/pc/VersionList";
+import { ContractDocSection } from "@/components/pc/ContractDocSection";
+import { ContractTimeline } from "@/components/pc/ContractTimeline";
 import { ReceivingRecord } from "@/components/pc/ReceivingRecord";
 import { AiSimDialog } from "@/components/ai/AiSimDialog";
 import { ContractLane, contractSubPill } from "@/components/pc/ContractCard";
 import { useAppStore } from "@/store/useAppStore";
 import { overdueContracts } from "@/lib/derive";
-import { CONTRACT_STAGE_LABEL, contractStage } from "@/lib/steps";
-import type { Contract, MilestoneKey } from "@/lib/types";
-import type { ContractStage } from "@/lib/steps";
+import { contractStage } from "@/lib/steps";
+import type { MilestoneKey } from "@/lib/types";
 import { daysUntil } from "@/lib/date";
 import { exclTax } from "@/lib/money";
 import {
@@ -36,63 +34,11 @@ import {
   paidRatio,
 } from "@/lib/rules";
 import { supplierById, BUYER } from "@/fixtures/suppliers";
-import { templateClauses } from "@/fixtures/ai/contract-template";
 import { buildFinalizeDiff, finalizeSteps } from "@/fixtures/ai/finalize-diff";
 import { invoiceSamples, invoiceSteps, BUYER_TITLE } from "@/fixtures/ai/invoice-samples";
 import { TODAY } from "@/lib/date";
 
-type TabKey = "follow" | "info" | "review";
-
-/** 交货跟进卡：交货逾期时只做提醒（红头 + 交货期 + 逾期天数），不提供催办动作，也不记录沟通 */
-function ExecStatusCard({ c, overdue, stage }: { c: Contract; overdue: number; stage: ContractStage }) {
-  if (overdue > 0) {
-    return (
-      <div className="rounded-card overflow-hidden border border-[#F0C9C4] bg-white">
-        <div className="bg-danger-bg flex items-center gap-2 px-4.5 py-3">
-          <AlertTriangle size={16} strokeWidth={1.8} className="text-danger-deep" />
-          <div className="text-danger-deep text-sm font-bold">交货跟进 · 交货逾期</div>
-        </div>
-        <div className="flex flex-col gap-2.5 px-4.5 py-3.5">
-          <div className="flex justify-between text-[13px]">
-            <span className="text-sub">合同交货期</span>
-            <span className="font-medium">{c.deliveryDate}</span>
-          </div>
-          <div className="flex justify-between text-[13px]">
-            <span className="text-sub">已逾期</span>
-            <span className="text-danger-deep font-bold">{overdue} 天</span>
-          </div>
-          <div className="text-sub border-line-soft border-t pt-2.5 text-[11.5px]">请与卖方经办 {c.sellerContactName} 确认发货安排</div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="border-line rounded-card flex flex-col gap-2.5 border bg-white px-4.5 py-3.5">
-      <div className="text-sm font-bold">交货跟进</div>
-      <div className="flex justify-between text-[13px]">
-        <span className="text-sub">当前状态</span>
-        <span className="font-medium">{CONTRACT_STATUS_LABEL[c.status]}</span>
-      </div>
-      <div className="flex justify-between text-[13px]">
-        <span className="text-sub">所处步骤</span>
-        <span className="font-medium">{CONTRACT_STAGE_LABEL[stage]}</span>
-      </div>
-      {c.deliveryDate && (
-        <div className="flex justify-between text-[13px]">
-          <span className="text-sub">合同交货期</span>
-          <CountdownChip dueAt={c.deliveryDate} />
-        </div>
-      )}
-      {c.goodsArrivedAt && (
-        <div className="flex justify-between text-[13px]">
-          <span className="text-sub">货到现场</span>
-          <span className="text-success-deep font-medium">{c.goodsArrivedAt}</span>
-        </div>
-      )}
-    </div>
-  );
-}
+type TabKey = "follow" | "doc";
 
 export default function ContractDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -119,7 +65,7 @@ export default function ContractDetailPage() {
 
   const c = contract;
   const isDraftStage = c.status === "ai_draft" || c.status === "reviewing" || c.status === "finalized";
-  const activeTab: TabKey = tab ?? (isDraftStage ? "review" : "follow");
+  const activeTab: TabKey = tab ?? (isDraftStage ? "doc" : "follow");
   const total = contractTotal(c);
   const paid = paidAmount(c);
   const pRatio = paidRatio(c);
@@ -192,9 +138,9 @@ export default function ContractDetailPage() {
             </div>
           </div>
           <div className="flex-1" />
+          {/* 头卡只放货物轨；款项轨在跟进 Tab 的「付款与发票」里已有一根，不重复 */}
           <div className="flex w-[300px] shrink-0 flex-col gap-2 pr-6">
             <ContractLane stage={stage} danger={overdue > 0} withLabels />
-            <MilestoneBar milestones={c.milestones} height={8} withLabels />
           </div>
           <div className="flex shrink-0 gap-7 text-right">
             <div>
@@ -233,8 +179,7 @@ export default function ContractDetailPage() {
           <TabBar
             tabs={[
               { key: "follow", label: "跟进" },
-              { key: "info", label: "合同信息" },
-              { key: "review", label: "校对与版本" },
+              { key: "doc", label: "合同与版本" },
             ]}
             active={activeTab}
             onChange={(k) => setTab(k as TabKey)}
@@ -244,52 +189,20 @@ export default function ContractDetailPage() {
         {activeTab === "follow" && (
           <div className="flex min-h-0 flex-1 gap-4">
             <div className="flex min-w-0 flex-[2] flex-col gap-3.5">
-              <div className="border-line rounded-card flex flex-col gap-3.5 border bg-white px-5.5 py-4.5">
-                <div className="flex items-center">
-                  <div className="text-[15px] font-bold">付款与发票</div>
-                  <div className="text-sub ml-auto text-xs">
-                    累计付款 <span className="text-success-deep font-bold">{Math.round(pRatio * 100)}%</span> · 累计开票{" "}
-                    <span className="text-ink font-bold">{Math.round(invRatio * 100)}%</span> · 尾款期限以「货到现场日」起算
-                  </div>
-                </div>
-                <MilestoneBar milestones={c.milestones} height={12} withLabels />
-                <MilestoneTable contract={c} onRegisterInvoice={(mKey) => setInvoiceMKey(mKey)} />
-              </div>
-
-              <div className="border-line rounded-card flex min-h-0 flex-1 flex-col overflow-hidden border bg-white">
-                <div className="border-line-soft flex items-center justify-between border-b px-5.5 py-3.5">
-                  <div className="text-[15px] font-bold">
-                    产品明细{" "}
-                    <span className="text-sub text-[12.5px] font-normal">
-                      {c.lines.length} 项{project ? ` · 关联清单「${project.code} 第一批」` : ""}
-                    </span>
-                  </div>
-                  <span className="text-primary-hover text-[12.5px]">查看技术附件</span>
-                </div>
-                <ContractLinesTable contract={c} />
-              </div>
+              <ContractTimeline contract={c} onRegisterInvoice={(mKey) => setInvoiceMKey(mKey)} />
             </div>
 
             <div className="flex min-w-0 flex-1 flex-col gap-3.5">
-              <ExecStatusCard c={c} overdue={overdue} stage={stage} />
-
               <div className="border-line rounded-card flex flex-col gap-2.5 border bg-white px-4.5 py-3.5">
                 <div className="flex items-center justify-between">
-                  <div className="text-sm font-bold">文档与版本</div>
-                  <div className="flex gap-1.5">
-                    <a href="/samples/contract-sample.xlsx" download={`${c.no}.xlsx`}>
-                      <Btn variant="secondary" size="sm">
-                        <Download size={12} strokeWidth={1.8} />
-                        xlsx
-                      </Btn>
-                    </a>
-                    <Btn variant="secondary" size="sm" onClick={() => setDiffOpen(true)}>
-                      <UploadCloud size={12} strokeWidth={1.8} />
-                      上传新版
-                    </Btn>
-                  </div>
+                  <div className="text-sm font-bold">合同文件</div>
+                  <button type="button" onClick={() => setTab("doc")} className="text-primary-hover cursor-pointer text-xs font-medium">
+                    合同与版本
+                  </button>
                 </div>
-                <VersionList versions={c.versions} />
+                <div className="text-ink-2 text-[12.5px]">
+                  {c.versions.length} 个版本 · 以 {c.versions[c.versions.length - 1]?.id} 为准 · {c.versions[c.versions.length - 1]?.name}
+                </div>
                 {c.attachments.length > 0 && (
                   <div className="border-line-soft flex flex-col gap-1.5 border-t pt-2.5">
                     {c.attachments.map((a) => (
@@ -337,94 +250,11 @@ export default function ContractDetailPage() {
           </div>
         )}
 
-        {activeTab === "info" && (
+        {activeTab === "doc" && (
           <div className="flex flex-col gap-3.5">
-            {templateClauses.map((cl) => (
-              <div key={cl.title} className="border-line rounded-card border bg-white px-5.5 py-4.5">
-                <div className="text-sm font-bold">{cl.title}</div>
-                <div className="text-ink-2 mt-2 text-[13px] leading-[1.9]">{cl.body}</div>
-                {cl.title.startsWith("第 8 条") && (
-                  <div className="border-line-soft mt-3 overflow-hidden rounded-[10px] border">
-                    {c.milestones.map((m, i) => (
-                      <div
-                        key={m.key}
-                        className={`flex items-center px-4 py-2.5 text-[13px] ${i < 3 ? "border-page border-b" : ""}`}
-                      >
-                        <div className="w-40 font-medium">
-                          {m.key} {m.label} {Math.round(m.ratio * 100)}%
-                        </div>
-                        <div className="text-ink-2 flex-1 text-[12.5px]">{m.condition}</div>
-                        <div className="w-32 text-right font-bold tabular-nums">
-                          {total != null ? <Money value={milestoneAmount(total, m.ratio)} /> : "—"}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-            <div className="border-line rounded-card border bg-white px-5.5 py-4.5">
-              <div className="text-sm font-bold">签章区</div>
-              <div className="mt-3 flex gap-8">
-                <div className="flex-1">
-                  <div className="text-sub text-xs">买方（盖章）</div>
-                  <div className="mt-1.5 text-[13.5px] font-bold">{BUYER.name}</div>
-                  <div className="text-ink-2 mt-1 text-[12.5px]">
-                    经办：{BUYER.contactName} · {BUYER.phone}
-                    <br />
-                    {BUYER.email}
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <div className="text-sub text-xs">卖方（盖章）</div>
-                  <div className="mt-1.5 text-[13.5px] font-bold">{supplier.name}</div>
-                  <div className="text-ink-2 mt-1 text-[12.5px]">
-                    经办：{c.sellerContactName} · {c.sellerContactPhone}
-                    <br />
-                    {supplier.address ?? ""}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === "review" && (
-          <div className="flex min-h-0 flex-1 gap-4">
-            <div className="flex min-w-0 flex-[2] flex-col gap-3.5">
-              <div className="border-line rounded-card flex flex-col overflow-hidden border bg-white">
-                <div className="border-line-soft flex items-center justify-between border-b px-5.5 py-3.5">
-                  <div className="text-[15px] font-bold">
-                    产品明细（{isDraftStage ? "草稿可编辑" : "只读"}）{" "}
-                    <span className="text-sub text-[12.5px] font-normal">单价输入后行金额与合计实时计算</span>
-                  </div>
-                </div>
-                <ContractLinesTable contract={c} editable={c.status === "ai_draft" || c.status === "reviewing"} />
-              </div>
-              <div className="border-line rounded-card border bg-white px-5.5 py-4.5">
-                <div className="text-sm font-bold">模板条款预览</div>
-                <div className="mt-2.5 flex flex-col gap-2.5">
-                  {templateClauses.map((cl) => (
-                    <div key={cl.title} className="text-[12.5px]">
-                      <span className="font-medium">{cl.title}</span>
-                      <span className="text-ink-2"> — {cl.body.slice(0, 60)}…</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="flex min-w-0 flex-1 flex-col gap-3.5">
-              <div className="border-line rounded-card flex flex-col gap-2.5 border bg-white px-4.5 py-3.5">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-bold">版本列表</div>
-                  <Btn variant="secondary" size="sm" onClick={() => setDiffOpen(true)}>
-                    <UploadCloud size={12} strokeWidth={1.8} />
-                    上传定稿回读
-                  </Btn>
-                </div>
-                <VersionList versions={c.versions} />
-              </div>
-              {advanceLabel && (
+            <ContractDocSection contract={c} project={project} onUploadVersion={() => setDiffOpen(true)} />
+            {advanceLabel && (
+              <div className="flex justify-end">
                 <Btn
                   variant="primary"
                   onClick={() => {
@@ -434,8 +264,8 @@ export default function ContractDetailPage() {
                 >
                   {advanceLabel}
                 </Btn>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         )}
       </div>

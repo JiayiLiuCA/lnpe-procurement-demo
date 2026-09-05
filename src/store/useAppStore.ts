@@ -20,8 +20,9 @@ import type {
 import { TODAY, fmtDate } from "@/lib/date";
 import { simulateOrderParse } from "@/lib/orderTerms";
 import { CONTRACT_STATUS_ORDER, deriveArrivalDeadlines } from "@/lib/rules";
+import { applyFinalizeChanges, contractKeyTerms } from "@/lib/contractTerms";
 import { projects as seedProjects } from "@/fixtures/projects";
-import { checklist20260510 } from "@/fixtures/checklist-20260510";
+import { appendBatchSheets, checklist20260510, firstBatchSheets } from "@/fixtures/checklist-20260510";
 import { extraChecklists } from "@/fixtures/checklists-extra";
 import { contracts as seedContracts } from "@/fixtures/contracts";
 import { deliveryNotes as seedNotes } from "@/fixtures/delivery-notes";
@@ -59,8 +60,8 @@ interface AppState {
   runCostForecast: () => void;
   /** 提醒中心：把待办标记为已办（工作台与侧栏角标随之减少） */
   markTodoDone: (id: string) => void;
-  /** 清单签核：审核通过（填 reviewAt）/ 批准（填 approveAt，状态→已批准，该项目的清单审核待办自动完成） */
-  signoffChecklist: (checklistId: string, step: "review" | "approve") => void;
+  /** 清单批准：技术部发来的表已经过其内部审核，这里只留一个批准入口；批准最新版（状态→已批准，该项目的清单批准待办自动完成） */
+  approveChecklist: (checklistId: string) => void;
   /** 收货异常已与卖方处理完毕：现场收货步骤不再算异常，对应的收货异常待办自动完成 */
   resolveException: (noteId: string, seq: number) => void;
   generateDraftContracts: (checklistId: string, rowIds: string[]) => string[];
@@ -74,7 +75,10 @@ interface AppState {
   applyFinalizeDiff: (contractId: string) => void;
   registerInvoice: (contractId: string, mKey: MilestoneKey, invoice: Invoice) => void;
   markMilestonePaid: (contractId: string, mKey: MilestoneKey) => void;
-  upsertChecklistParse: () => void;
+  /** AI 流程 2（修正）：同一批次上传新版本 → 版本 +1、回到待批准；已做的订货安排按行保留，演示中修正 2 行数量 */
+  addChecklistVersion: (checklistId: string) => void;
+  /** AI 流程 2（首批 / 追加）：为项目新建一个批次（batchNo 递增）并入库待批准；返回新清单 id */
+  addChecklistBatch: (projectId: string) => string;
   confirmDeliveryLine: (noteId: string, seq: number) => void;
   markLineException: (noteId: string, seq: number, exception: NonNullable<DeliveryLine["exception"]>) => void;
   addLinePhoto: (noteId: string, seq: number) => void;
@@ -385,14 +389,17 @@ export const useAppStore = create<AppState>()(
           }),
         })),
 
+      // AI 流程 4：定稿回读——确认后把比对出的差异（首行单价 / 交货期 / 经办电话）套到合同上，并追加一版带 AI 条目的记录
       applyFinalizeDiff: (contractId) =>
         set((s) => ({
           contracts: s.contracts.map((c) => {
             if (c.id !== contractId) return c;
+            const frozen = c.versions.map((v) => (v.keyTerms ? v : { ...v, aiAt: v.aiAt ?? v.at, keyTerms: contractKeyTerms(c) }));
+            const next = applyFinalizeChanges(c);
             const n = c.versions.length + 1;
             return {
-              ...c,
-              versions: [...c.versions, { id: `v${n}`, name: `v${n} 人工修订（上传回读）`, at: TODAY, by: "赵小燕 上传" }],
+              ...next,
+              versions: [...frozen, { id: `v${n}`, name: `v${n} 定稿回读（人工修订）`, at: TODAY, by: "赵小燕 上传", aiAt: TODAY, keyTerms: contractKeyTerms(next) }],
             };
           }),
         })),
@@ -420,16 +427,124 @@ export const useAppStore = create<AppState>()(
           ),
         })),
 
-      // AI 流程 2：幂等 upsert cl-20260510-1，版本号 +1（项目步骤由清单状态派生，无需另行推进）
-      upsertChecklistParse: () =>
-        set((s) => ({
-          checklists: s.checklists.map((cl) => {
-            if (cl.id !== "cl-20260510-1") return cl;
-            const m = cl.version.match(/v(\d+)/);
-            const n = m ? Number(m[1]) + 1 : 2;
-            return { ...cl, version: `5.30（v${n}）` };
-          }),
-        })),
+      // AI 流程 2（修正）：版本 +1 → 待批准；修正 2 行数量（挑未入合同的需采购 / 待核对行），其余行的订货安排原样保留
+      addChecklistVersion: (checklistId) =>
+        set((s) => {
+          const cl = s.checklists.find((c) => c.id === checklistId);
+          if (!cl) return {};
+          const n = cl.versions.length + 1;
+          const targets = new Set(
+            cl.sheets
+              .flatMap((sh) => sh.rows)
+              .filter((r) => !r.contractId && typeof r.qty === "number" && (r.alloc.status === "need" || r.alloc.status === "pending"))
+              .slice(0, 2)
+              .map((r) => r.id),
+          );
+          const sheets = cl.sheets.map((sh) => ({
+            ...sh,
+            rows: sh.rows.map((r) => {
+              if (!targets.has(r.id) || typeof r.qty !== "number") return r;
+              const qty = r.qty + 1;
+              return { ...r, qty, alloc: r.alloc.status === "need" ? { ...r.alloc, need: r.alloc.need + 1 } : r.alloc };
+            }),
+          }));
+          const fileName = cl.fileName.replace(/(\(|（)[^()（）]*(\)|）)\.xlsx?$/, `(${fmtDate(TODAY).replace("-", ".")}).xls`);
+          const version = {
+            id: `v${n}`,
+            name: `v${n} 修正版`,
+            at: TODAY,
+            by: `${cl.signoff.maker} 制表`,
+            fileName,
+            rows: cl.versions[cl.versions.length - 1]?.rows ?? sheets.reduce((a, sh) => a + sh.rows.length, 0),
+            changes: targets.size > 0 ? `修正 ${targets.size} 项数量` : "修正技术要求",
+          };
+          const project = s.projects.find((p) => p.id === cl.projectId);
+          const title = cl.batchNo === 1 ? "第一批" : `追加第${cl.batchNo}批`;
+          return {
+            checklists: s.checklists.map((c) =>
+              c.id !== checklistId ? c : { ...c, fileName, status: "待批准" as const, versions: [...c.versions, version], sheets },
+            ),
+            activities: [
+              {
+                id: `a-cl-${checklistId}-${version.id}`,
+                projectId: cl.projectId,
+                text: `${title}采购清单 ${version.id} 修正版上传入库（${version.changes}）· 待批准`,
+                at: `${fmtDate(TODAY)} ${nowHM()}`,
+                actor: cl.signoff.maker,
+                tone: "neutral" as const,
+              },
+              ...s.activities,
+            ],
+            todos: [
+              {
+                id: `t-cl-${checklistId}-${version.id}`,
+                kind: "approve" as const,
+                pillText: "清单批准",
+                title: `${project?.code ?? ""} ${project?.name ?? ""} ${title}采购清单 ${version.id}`.trim(),
+                sub: `制表 ${cl.signoff.maker} · ${fmtDate(TODAY)} 上传入库 · ${version.changes}`,
+                actionLabel: "去批准",
+                href: `/projects/${cl.projectId}?step=2`,
+              },
+              ...s.todos,
+            ],
+          };
+        }),
+
+      // AI 流程 2（首批 / 追加）：首批用 7 个子系统 sheet 模板（71 行），追加批用电气元件 + 自制钣金件模板（6 行），全部待核对
+      addChecklistBatch: (projectId) => {
+        const s = get();
+        const project = s.projects.find((p) => p.id === projectId);
+        if (!project) return "";
+        const batchNo = s.checklists.filter((c) => c.projectId === projectId).length + 1;
+        const id = `cl-${project.code}-${batchNo}`;
+        const dateTag = fmtDate(TODAY).replace("-", ".");
+        const first = batchNo === 1;
+        const title = first ? "第一批" : `追加第${batchNo}批`;
+        const sheets = first ? firstBatchSheets(`s${project.code}-${batchNo}`) : appendBatchSheets(`s${project.code}-${batchNo}`);
+        const rows = sheets.reduce((a, sh) => a + sh.rows.length, 0);
+        const fileName = first ? `${project.code}采购清单(${dateTag}).xls` : `${project.code}采购清单-追加(${dateTag}).xls`;
+        const cl: Checklist = {
+          id,
+          projectId,
+          batchNo,
+          title: `${project.code} 采购清单 · ${title}`,
+          fileName,
+          status: "待批准",
+          signoff: { maker: "肖济忠", makerAt: TODAY },
+          versions: [{ id: "v1", name: "v1 技术部初版", at: TODAY, by: "肖济忠 制表", fileName, rows }],
+          globalNote: first
+            ? "全局表面处理要求：外表面喷砂处理，内表面喷涂 ETFE 0.3mm；设备与物料接触部位禁用 Cu、Zn 材质，物料接触点全部为 S30408 不锈钢件或非金属件；所有紧固件采用 304 不锈钢。以上要求适用于本清单全部子系统。"
+            : "追加批次：电气元件品牌要求与第一批「电气资料及要求」一致；控制柜柜体与桥架为公司自制；本批与第一批需采购项合并出合同。",
+          sheets,
+        };
+        set({
+          checklists: [...s.checklists, cl],
+          activities: [
+            {
+              id: `a-cl-${id}`,
+              projectId,
+              text: `${title}采购清单上传入库（AI 解析 ${sheets.length} 个 sheet · ${rows} 行）· 待批准`,
+              at: `${fmtDate(TODAY)} ${nowHM()}`,
+              actor: "肖济忠",
+              tone: "neutral",
+            },
+            ...s.activities,
+          ],
+          todos: [
+            {
+              id: `t-cl-${id}`,
+              kind: "approve",
+              pillText: "清单批准",
+              title: `${project.code} ${project.name} ${title}采购清单`,
+              sub: `制表 肖济忠 · ${fmtDate(TODAY)} 上传入库 · 共 ${rows} 项`,
+              actionLabel: "去批准",
+              href: `/projects/${projectId}?step=2`,
+            },
+            ...s.todos,
+          ],
+        });
+        return id;
+      },
 
       confirmDeliveryLine: (noteId, seq) =>
         set((s) => ({
@@ -521,20 +636,42 @@ export const useAppStore = create<AppState>()(
 
       markTodoDone: (id) => set((s) => ({ todos: s.todos.map((t) => (t.id === id ? { ...t, done: true } : t)) })),
 
-      signoffChecklist: (checklistId, step) =>
+      approveChecklist: (checklistId) =>
         set((s) => {
           const cl = s.checklists.find((c) => c.id === checklistId);
-          if (!cl) return {};
+          if (!cl || cl.status === "已批准") return {};
+          const latest = cl.versions[cl.versions.length - 1];
           const checklists = s.checklists.map((c) =>
             c.id !== checklistId
               ? c
-              : step === "review"
-                ? { ...c, signoff: { ...c.signoff, reviewAt: c.signoff.reviewAt ?? TODAY } }
-                : { ...c, status: "已批准" as const, signoff: { ...c.signoff, reviewAt: c.signoff.reviewAt ?? TODAY, approveAt: TODAY } },
+              : {
+                  ...c,
+                  status: "已批准" as const,
+                  signoff: { ...c.signoff, approveAt: TODAY, approvedBy: "赵小燕" },
+                  versions: c.versions.map((v) => (v.id === latest?.id ? { ...v, approveAt: TODAY, approvedBy: "赵小燕" } : v)),
+                },
           );
-          const todos =
-            step === "approve" ? s.todos.map((t) => (t.kind === "review" && t.href.includes(cl.projectId) ? { ...t, done: true } : t)) : s.todos;
-          return { checklists, todos };
+          // 该项目其余批次若仍待批准，待办保留；只完成指向本批次的待办（种子待办按项目匹配）
+          const stillPending = s.checklists.some((c) => c.projectId === cl.projectId && c.id !== checklistId && c.status !== "已批准");
+          const todos = s.todos.map((t) =>
+            t.kind === "approve" && t.href.includes(cl.projectId) && (t.id.includes(checklistId) || !stillPending) ? { ...t, done: true } : t,
+          );
+          const title = cl.batchNo === 1 ? "第一批" : `追加第${cl.batchNo}批`;
+          return {
+            checklists,
+            todos,
+            activities: [
+              {
+                id: `a-cl-${checklistId}-${latest?.id ?? "v1"}-ok`,
+                projectId: cl.projectId,
+                text: `${title}采购清单 ${latest?.id ?? "v1"} 批准，进入订货安排`,
+                at: `${fmtDate(TODAY)} ${nowHM()}`,
+                actor: "赵小燕",
+                tone: "neutral" as const,
+              },
+              ...s.activities,
+            ],
+          };
         }),
 
       resolveException: (noteId, seq) =>
@@ -569,7 +706,7 @@ export const useAppStore = create<AppState>()(
       name: "lnpe-demo-v2",
       // 数据结构/种子内容变更时递增：版本不匹配的旧 localStorage 会被直接丢弃（回到种子数据），
       // 避免旧结构（如 orderContract 顶层 keyTerms、缺 versions[].keyTerms）rehydrate 后覆盖新种子导致运行时崩溃
-      version: 14,
+      version: 15,
       storage: createJSONStorage(() => localStorage),
       skipHydration: true,
       partialize: (s) =>

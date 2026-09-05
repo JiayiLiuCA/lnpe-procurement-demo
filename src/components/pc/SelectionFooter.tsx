@@ -1,9 +1,8 @@
 "use client";
 
-// 清单吸底操作栏，按步骤只露出该步的动作：
-//  source（订货安排）：标记库存分配 / 安排生产（公司自制）/ 标记需采购
-//  contract（子合同）：上传合同（勾选覆盖）/ AI 生成采购合同
-//  full（独立路由）：全部
+// 清单吸底操作栏（订货安排步 / 独立清单页共用）：
+//  标记库存分配 / 安排生产（公司自制）/ 标记需采购 → 需采购行直接 上传已签合同（勾选覆盖）/ AI 生成采购合同初稿
+// 只有采购部一个角色在用，库存情况是人工沟通后来标记的，所以标库存和出合同放在同一条底栏。
 import { useState } from "react";
 import { Factory, Sparkles, UploadCloud } from "lucide-react";
 import type { ChecklistRow } from "@/lib/types";
@@ -34,7 +33,7 @@ export function SelectionFooter({
   onUploadContract,
   estimate,
 }: {
-  mode?: "review" | "source" | "contract" | "full";
+  mode?: "source" | "full";
   selectedRows: ChecklistRow[];
   onMarkAllocation: (qty: number) => void;
   /** 标记为需采购（分配数归零），订货安排步专用 */
@@ -60,7 +59,7 @@ export function SelectionFooter({
   const needSum = buyRows.reduce((s, r) => s + (typeof r.qty === "number" ? r.alloc.need || r.qty : 0), 0);
   const brands = [...new Set(buyRows.map((r) => r.brands).filter(Boolean))].join("、");
   const showSource = mode === "source" || mode === "full";
-  const showContract = mode === "contract" || mode === "full";
+  const showContract = showSource;
 
   return (
     <div className="border-line-soft mt-auto flex items-center gap-3.5 border-t bg-white px-4 py-3">
@@ -75,7 +74,9 @@ export function SelectionFooter({
         )}
       </div>
       <div className="text-sub text-[12.5px]">
-        {showContract ? `${brands ? `候选品牌：${brands} · ` : ""}跨子系统同供应商项将自动合并为一份合同` : "已分配的行不可再选；安排生产的行可撤销改回需采购"}
+        {buyRows.length > 0
+          ? `${brands ? `候选品牌：${brands} · ` : ""}跨子系统同供应商项自动合并为一份合同`
+          : "已分配的行不可再选；安排生产的行可撤销改回需采购"}
       </div>
       <div className="flex-1" />
 

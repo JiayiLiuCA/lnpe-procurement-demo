@@ -6,10 +6,12 @@
 // 状态一律由 lib/steps.ts 派生。颜色语义：绿=已完成，青=当前/进行中，红=逾期或异常，灰=未开始。
 import { Check } from "lucide-react";
 import type { Project } from "@/lib/types";
-import { STEP_GROUPS, STEP_LABELS, STEP_NOS, paymentLane, projectProgress, type LaneNode, type ProjectProgress, type StepMark, type StepNo } from "@/lib/steps";
+import { STEP_GROUPS, STEP_LABELS, STEP_NOS, isSignedContract, paymentLane, projectProgress, type LaneNode, type ProjectProgress, type StepMark, type StepNo } from "@/lib/steps";
 import { projectContracts } from "@/lib/derive";
+import { contractTotal, paidAmount } from "@/lib/rules";
 import type { MilestoneKey } from "@/lib/types";
 import { useAppStore } from "@/store/useAppStore";
+import { Money } from "./Money";
 
 /** 列表阶段列每一步的宽度（表头与行共用，保证图标对齐在名字正下方） */
 export const STEP_CELL_W = 64;
@@ -112,7 +114,7 @@ function laneTone(n: LaneNode): { dot: string; text: string } {
 /**
  * 项目详情头部的可点击步骤条 + 付款开票轨。两行共用同一个 7 等分网格，铺满整行，节点天然对齐。
  * 进度图标展示项目实际进度；点击任意步骤切换下方内容，被选中的步名加底色；
- * 款项轨节点显示项目级份数，点击展开付款开票面板（再点收起）。
+ * 款项轨节点显示项目级份数，点击展开付款开票面板（再点收起）；轨表头放项目级已签总额与已付比例，各步共用一份。
  */
 export function StepStepper({
   project,
@@ -128,8 +130,12 @@ export function StepStepper({
   onSelectMoney: (key: MilestoneKey | null) => void;
 }) {
   const contracts = useAppStore((s) => s.contracts);
-  const { states } = useProjectProgress(project);
-  const lane = paymentLane(projectContracts(contracts, project.id));
+  const { states, current } = useProjectProgress(project);
+  const list = projectContracts(contracts, project.id);
+  const lane = paymentLane(list);
+  const signedTotal = list.filter(isSignedContract).reduce((s, c) => s + (contractTotal(c) ?? 0), 0);
+  const paid = list.reduce((s, c) => s + paidAmount(c), 0);
+  const paidPct = signedTotal > 0 ? `${((paid / signedTotal) * 100).toFixed(1)}%` : "—";
 
   return (
     <div className="flex w-full flex-col gap-3">
@@ -137,10 +143,11 @@ export function StepStepper({
       <div style={GRID}>
         {states.map((s, i) => {
           const selected = s.no === viewStep;
+          // 当前步（不论空心圈还是半圆）步名加粗；后面先走到的步只青色不加粗
           const labelTone =
             s.mark === "issue"
               ? "text-danger-deep font-bold"
-              : s.mark === "current"
+              : s.no === current
                 ? "text-info-deep font-bold"
                 : s.mark === "done"
                   ? "text-ink-2"
@@ -175,10 +182,16 @@ export function StepStepper({
         </div>
       ) : (
         <div style={GRID} className="items-start">
-          <div className="text-sub col-span-3 flex items-center gap-2 pr-6 text-[11.5px]" style={{ height: 44 }}>
+          <div
+            className="text-sub col-span-3 flex items-center gap-2 pr-6 text-[11.5px]"
+            style={{ height: 44 }}
+            title="按合同付款条款 10 / 50 / 30 / 10 分四笔；已签总额只计已签订的子合同"
+          >
             <span className="bg-line-soft h-px flex-1" />
             <span className="whitespace-nowrap font-medium">付款开票</span>
-            <span className="text-faint whitespace-nowrap">按合同付款条款 10 / 50 / 30 / 10</span>
+            <span className="text-ink-2 whitespace-nowrap tabular-nums">
+              已签 <Money value={signedTotal} className="text-ink font-medium" /> · 已付 <span className="text-ink font-medium">{paidPct}</span>
+            </span>
           </div>
           {lane.map((n) => {
             const tone = laneTone(n);

@@ -6,7 +6,7 @@ import { StatusPill, type PillTone } from "@/components/ui/StatusPill";
 import { Btn } from "@/components/ui/Btn";
 
 const KIND_TONE: Record<TodoKind, PillTone> = {
-  review: "warning",
+  approve: "warning",
   ai_draft: "ai",
   payment_due: "warning",
   delivery_overdue: "danger",

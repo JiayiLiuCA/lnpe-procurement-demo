@@ -15,17 +15,17 @@ import { TODAY, fmtDate } from "@/lib/date";
 type Tab = "all" | TodoKind | "done";
 
 const KIND_META: Record<TodoKind, { label: string; tone: PillTone; urgent?: boolean }> = {
-  review: { label: "清单审核", tone: "warning" },
+  approve: { label: "清单批准", tone: "warning" },
   ai_draft: { label: "AI 初稿", tone: "ai" },
   payment_due: { label: "付款临期", tone: "warning", urgent: true },
   delivery_overdue: { label: "交货逾期", tone: "danger", urgent: true },
   receive_exception: { label: "收货异常", tone: "danger", urgent: true },
 };
-const KINDS: TodoKind[] = ["review", "ai_draft", "payment_due", "delivery_overdue", "receive_exception"];
+const KINDS: TodoKind[] = ["approve", "ai_draft", "payment_due", "delivery_overdue", "receive_exception"];
 
 // 提醒规则：只提醒不催办；开关仅演示（本地状态）
 const RULES: { key: string; title: string; desc: string; kind: TodoKind }[] = [
-  { key: "review", title: "采购清单提交审核", desc: "制表人提交后即时提醒负责人；批准后自动消除", kind: "review" },
+  { key: "approve", title: "采购清单待批准", desc: "技术部清单上传入库后即时提醒负责人；批准后自动消除", kind: "approve" },
   { key: "ai_draft", title: "AI 合同初稿生成", desc: "初稿生成后提醒校对定稿；定稿后自动消除", kind: "ai_draft" },
   { key: "payment", title: "合同付款到期", desc: "到期前 7 天、到期当天各提醒一次；登记付款后自动消除", kind: "payment_due" },
   { key: "overdue", title: "交货逾期", desc: "过交货期当天提醒，之后每周一次；货到现场自动消除", kind: "delivery_overdue" },
@@ -61,7 +61,7 @@ export default function NotificationsPage() {
   const urgent = open.filter((t) => KIND_META[t.kind].urgent);
   const counts: Record<Tab, number> = {
     all: open.length,
-    review: open.filter((t) => t.kind === "review").length,
+    approve: open.filter((t) => t.kind === "approve").length,
     ai_draft: open.filter((t) => t.kind === "ai_draft").length,
     payment_due: open.filter((t) => t.kind === "payment_due").length,
     delivery_overdue: open.filter((t) => t.kind === "delivery_overdue").length,
@@ -93,7 +93,7 @@ export default function NotificationsPage() {
       />
       <div className="flex flex-1 flex-col gap-4 p-6">
         <div className="flex gap-4">
-          <KpiCard label="待办" value={open.length} valueSuffix="条" sub={`清单审核 ${counts.review} · AI 初稿 ${counts.ai_draft} · 付款临期 ${counts.payment_due}`} />
+          <KpiCard label="待办" value={open.length} valueSuffix="条" sub={`清单批准 ${counts.approve} · AI 初稿 ${counts.ai_draft} · 付款临期 ${counts.payment_due}`} />
           <KpiCard
             label="需今日处理"
             value={urgent.length}
@@ -121,7 +121,7 @@ export default function NotificationsPage() {
                   type="button"
                   onClick={() => setTab(k)}
                   className={`cursor-pointer rounded-full px-3 py-1.25 text-[12.5px] font-medium ${
-                    tab === k ? "bg-ink text-white" : "border-line text-ink-2 border bg-white"
+                    tab === k ? "chip-selected" : "border-line text-ink-2 border bg-white"
                   }`}
                 >
                   {label} {counts[k]}

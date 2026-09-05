@@ -3,7 +3,8 @@
 @theme {
   /* 颜色语义规则（2026-09-02）：橙色只做品牌与主操作（logo、侧栏激活、每页一个主按钮、可点击链接），
      不表达状态。状态一律语义色：success=已完成/通过/已付；info(青)=进行中/当前；
-     warning=待处理/临期；danger=逾期/异常；灰=未开始/已结束；选中态用墨色。 */
+     warning=待处理/临期；danger=逾期/异常；灰=未开始/已结束。
+     选中态（筛选 chip / 批次 pill / 段头标签）用 .chip-selected：品牌炭灰 ink-2 实底 + 白字，不用墨色 #2C2A2A 实底也不用浅底（浅底与未选中区分不开，2026-09-04）。 */
   --color-brand: #E56900;          /* logo 原色，只用于 logo 相邻处（侧栏激活底色） */
   --color-primary: #DA711B;        /* UI 橙：品牌橙降饱和，主按钮实底 */
   --color-primary-hover: #C16215;  /* 深一档：链接文字 / 主按钮 hover */
@@ -44,4 +45,12 @@ body {
 }
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+/* 选中态 chip（筛选条 / 批次 pill / 清单段头标签）：品牌炭灰实底 + 白字——比墨色 #2C2A2A 柔和，又和未选中的白底 / 浅色状态 chip 明显拉开 */
+@utility chip-selected {
+  background-color: var(--color-ink-2);
+  color: #ffffff;
+  border: 1px solid var(--color-ink-2);
+  font-weight: 600;
 }

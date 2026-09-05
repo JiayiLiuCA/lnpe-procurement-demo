@@ -1,14 +1,14 @@
 import type { Todo } from "@/lib/types";
 
-// 工作台待办（清单审核 / AI 初稿 / 付款临期 / 交货逾期 / 收货异常 各一条）
+// 工作台待办（清单批准 / AI 初稿 / 付款临期 / 交货逾期 / 收货异常 各一条）
 export const todos: Todo[] = [
   {
     id: "t-cl-260706",
-    kind: "review",
-    pillText: "清单审核",
-    title: "260706 磷酸铁锂二粉线 第一批采购清单",
-    sub: "制表 肖济忠 · 08-14 提交 · 待核对 5 项",
-    actionLabel: "去审核",
+    kind: "approve",
+    pillText: "清单批准",
+    title: "260706 磷酸铁锂二粉线 追加第二批采购清单",
+    sub: "制表 肖济忠 · 08-19 上传入库 · 电气元件 4 项 · 自制钣金件 2 项",
+    actionLabel: "去批准",
     href: "/projects/p-260706?step=2",
   },
   {

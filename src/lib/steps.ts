@@ -1,13 +1,13 @@
 // 项目步骤模型（2026-09-04 定稿）：货物轨 7 步 + 付款开票轨。
 // 一切由清单 / 合同 / 送货单派生，不落库：当前步 = 最早未完成的步；
-// 后面步骤已有合同走到时显示进度（青色半圆），逾期 / 异常显示红色感叹号。
+// 图标：已完成 绿勾；当前步没开始 青色空心圈、开始了没结束 青色半圆；后面步骤已有合同走到 青色半圆；逾期 / 异常 红色感叹号；未开始 灰点。
 import type { Checklist, Contract, DeliveryNote, MilestoneKey, Project } from "./types";
 import { checklistStats, overdueContracts, projectContracts } from "./derive";
 import { contractTotal, milestoneAmount } from "./rules";
 import { daysUntil, fmtDate } from "./date";
 import { latestProcessed } from "./orderTerms";
 
-export const STEP_LABELS = ["订单接收", "采购清单", "订货安排", "子合同", "交货跟进", "现场收货", "订单关闭"] as const;
+export const STEP_LABELS = ["订单接收", "采购清单", "订货安排", "采购合同", "交货跟进", "现场收货", "订单关闭"] as const;
 export type StepNo = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 export const STEP_NOS: StepNo[] = [1, 2, 3, 4, 5, 6, 7];
 
@@ -49,11 +49,11 @@ export type ContractStage = "draft" | "delivering" | "receiving" | "settling" | 
 export const CONTRACT_STAGE_ORDER: ContractStage[] = ["draft", "delivering", "receiving", "settling", "closed"];
 
 export const CONTRACT_STAGE_LABEL: Record<ContractStage, string> = {
-  draft: "子合同",
+  draft: "采购合同",
   delivering: "交货跟进",
   receiving: "现场收货",
   settling: "结算",
-  closed: "完结",
+  closed: "订单关闭",
 };
 
 /**
@@ -85,7 +85,8 @@ export function projectDeliveryNotes(project: Project, notes: DeliveryNote[]): D
 export function projectProgress(project: Project, checklists: Checklist[], contracts: Contract[], notes: DeliveryNote[]): ProjectProgress {
   const cls = checklists.filter((cl) => cl.projectId === project.id);
   const list = projectContracts(contracts, project.id);
-  const st = cls.reduce(
+  // 订货安排 / 子合同的行统计只算已批准的批次：待批准批次的行不进待核对
+  const st = cls.filter((cl) => cl.status === "已批准").reduce(
     (acc, cl) => {
       const s = checklistStats(cl);
       return {
@@ -121,8 +122,9 @@ export function projectProgress(project: Project, checklists: Checklist[], contr
   const hasContract = !!latestProcessed(project.orderContract);
   const done: Record<StepNo, boolean> = { 1: hasContract, 2: false, 3: false, 4: false, 5: false, 6: false, 7: false };
   done[2] = hasContract && cls.length > 0 && approved === cls.length;
-  done[3] = done[2] && st.pending === 0;
-  done[4] = done[3] && st.contracted >= st.need && drafts === 0;
+  // 3 订货安排：每一行都有去处（库存 / 生产 / 已入合同）；4 子合同：没有未签的草稿
+  done[3] = done[2] && st.pending === 0 && st.contracted >= st.need;
+  done[4] = done[3] && drafts === 0;
   done[5] = done[4] && stages.every((s) => s !== "draft" && s !== "delivering");
   done[6] = done[5] && stages.every((s) => s === "settling" || s === "closed") && excOpen === 0 && pNotes.every((n) => n.status === "done");
   done[7] = closed;
@@ -131,9 +133,14 @@ export function projectProgress(project: Project, checklists: Checklist[], contr
 
   const notesByStep: Record<StepNo, string> = {
     1: !project.orderContract ? "待上传项目合同" : hasContract ? "项目合同已入库" : "AI 抓取中",
-    2: cls.length === 0 ? "待技术部提供清单" : approved < cls.length ? `审核 ${approved}/${cls.length} 批` : `已批准 ${cls.length} 批`,
-    3: st.pending > 0 ? `待核对 ${st.pending} 项` : `库存 ${st.allocated} · 生产 ${st.produce} · 采购 ${st.need}`,
-    4: `覆盖 ${st.contracted}/${st.need}${drafts > 0 ? ` · 待签 ${drafts} 份` : signed > 0 ? ` · 已签 ${signed} 份` : ""}`,
+    2: cls.length === 0 ? "待技术部提供清单" : approved < cls.length ? `待批准 ${cls.length - approved} 批` : `已批准 ${cls.length} 批`,
+    3:
+      st.pending > 0
+        ? `待核对 ${st.pending} 项`
+        : st.need - st.contracted > 0
+          ? `需采购 ${st.need - st.contracted} 项`
+          : `库存 ${st.allocated} · 生产 ${st.produce} · 合同 ${st.contracted}`,
+    4: list.length === 0 ? "" : drafts > 0 ? `待签 ${drafts} 份` : `已签 ${signed} 份`,
     5:
       list.length === 0
         ? ""
@@ -152,14 +159,27 @@ export function projectProgress(project: Project, checklists: Checklist[], contr
   };
 
   const issueAt = (n: StepNo) => (n === 5 ? overdue.length > 0 : n === 6 ? excOpen > 0 : false);
-  const progressAt = (n: StepNo) =>
-    n === 4 ? list.length > 0 : n === 5 ? signed > 0 : n === 6 ? pNotes.length > 0 || settlingPlus > 0 : n === 7 ? settlingPlus > 0 : false;
+  // 这一步是否已经开始（有东西在推进）：当前步开始了但没结束 → 半圆；后面的步有合同先走到 → 半圆
+  const startedAt = (n: StepNo) =>
+    n === 1
+      ? !!project.orderContract
+      : n === 2
+        ? cls.length > 0
+        : n === 3
+          ? st.total > 0 && (st.pending < st.total || st.contracted > 0)
+          : n === 4
+            ? list.length > 0
+            : n === 5
+              ? signed > 0
+              : n === 6
+                ? pNotes.length > 0 || settlingPlus > 0
+                : settlingPlus > 0;
 
   const states: StepState[] = STEP_NOS.map((n) => {
     let mark: StepMark;
     if (closed || (current !== null && n < current)) mark = "done";
-    else if (n === current) mark = issueAt(n) ? "issue" : "current";
-    else mark = issueAt(n) ? "issue" : progressAt(n) ? "partial" : "idle";
+    else if (n === current) mark = issueAt(n) ? "issue" : startedAt(n) ? "partial" : "current";
+    else mark = issueAt(n) ? "issue" : startedAt(n) ? "partial" : "idle";
     return { no: n, label: STEP_LABELS[n - 1], mark, note: notesByStep[n] };
   });
 

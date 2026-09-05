@@ -43,7 +43,9 @@ export default function ChecklistsPage() {
                 <div className="text-ink-2 w-[180px]">
                   {p?.code} {p?.name}
                 </div>
-                <div className="w-[120px] tabular-nums">{cl.version}</div>
+                <div className="w-[120px] tabular-nums">
+                  {cl.versions[cl.versions.length - 1]?.id} · {cl.versions.length} 版
+                </div>
                 <div className="w-[100px]">
                   <StatusPill tone={cl.status === "已批准" ? "success" : "warning"}>{cl.status}</StatusPill>
                 </div>
@@ -53,6 +55,7 @@ export default function ChecklistsPage() {
                 </div>
                 <div className="text-sub w-[140px] text-[12.5px]">
                   制表 {cl.signoff.maker} {fmtDate(cl.signoff.makerAt)}
+                  {cl.signoff.approveAt && ` · 批准 ${fmtDate(cl.signoff.approveAt)}`}
                 </div>
               </button>
             );

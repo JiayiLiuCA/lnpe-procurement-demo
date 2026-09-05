@@ -1,7 +1,7 @@
 import type { Checklist, ChecklistRow, Sheet } from "@/lib/types";
 
 // 行状态恒等式：9 全分配 + 59 全需采购 + 2 安排生产 + 1 部分分配 = 71（待核对 0，订货安排已完成）
-// 派生结果：已分配 10 项 / 需采购 60 项 / 安排生产 2 项 / 已入合同 54 项 → 项目停在「子合同」步（覆盖 54/60）
+// 派生结果：已分配 10 项 / 需采购 60 项 / 安排生产 2 项 / 已入合同 54 项；加上追加第二批（checklists-extra.ts，需采购 3）→ 待出合同 9 项，项目停在「订货安排」步（出合同在该步做），子合同步显示 待签 3 份
 
 export type RowSpec = {
   name: string;
@@ -342,10 +342,63 @@ export const checklist20260510: Checklist = {
   batchNo: 1,
   title: "20260510 采购清单 · 第一批",
   fileName: "20260510采购清单(5.30).xls",
-  version: "5.30（v2）",
   status: "已批准",
-  signoff: { maker: "肖济忠", makerAt: "2026-05-23", reviewAt: "2026-05-28", approveAt: "2026-05-30" },
+  signoff: { maker: "肖济忠", makerAt: "2026-05-23", approveAt: "2026-05-30", approvedBy: "赵小燕" },
+  versions: [
+    { id: "v1", name: "v1 技术部初版", at: "2026-05-23", by: "肖济忠 制表", fileName: "20260510采购清单(5.23).xls", rows: 71, approveAt: "2026-05-25", approvedBy: "赵小燕" },
+    {
+      id: "v2",
+      name: "v2 修正版",
+      at: "2026-05-30",
+      by: "肖济忠 制表",
+      fileName: "20260510采购清单(5.30).xls",
+      rows: 71,
+      changes: "修正 3 项数量 · 补充 2 项品牌要求",
+      approveAt: "2026-05-30",
+      approvedBy: "赵小燕",
+    },
+  ],
   globalNote:
     "全局表面处理要求：外表面喷砂处理，内表面喷涂 ETFE 0.3mm；设备与物料接触部位禁用 Cu、Zn 材质，合金中 Zn、Cu 含量 <1%，物料接触点全部为 S30408 不锈钢件或非金属件；不锈钢件与物料接触面抛光 Ra≤0.8，焊缝连续满焊并酸洗钝化处理；碳钢结构件外表面喷砂除锈达 Sa2.5 级后喷塑或喷涂环氧底漆两道、聚氨酯面漆两道；所有紧固件采用 304 不锈钢；橡胶、塑料等非金属接料件须为食品级或提供无铜锌迁移证明；设备铭牌采用 304 蚀刻铭牌。以上要求适用于本清单全部子系统，与单项技术要求冲突时从严执行。",
   sheets: [sheet1, sheet2, sheet3, sheet4, sheet5, sheet6, sheet7],
 };
+
+/* ------------------------------------------------------------------ 上传演示用的批次模板 */
+
+/** 首批：与 20260510 同结构的 7 个子系统 sheet（71 行），全部待核对，供尚无清单的项目「上传采购清单」演示 */
+export function firstBatchSheets(prefix: string): Sheet[] {
+  return checklist20260510.sheets.map((sh, i) => ({
+    ...sh,
+    id: `${prefix}-${i + 1}`,
+    rows: sh.rows.map((r, j) => ({
+      ...r,
+      id: `r-${prefix}-${i + 1}-${j + 1}`,
+      alloc: { allocated: 0, need: 0, status: "pending" as const },
+      contractId: undefined,
+    })),
+  }));
+}
+
+/** 追加批次：电气元件 + 自制钣金件（6 行），全部待核对 */
+export const APPEND_BATCH_SPECS: { name: string; specs: RowSpec[] }[] = [
+  {
+    name: "电气元件",
+    specs: [
+      { name: "变频器", spec: "MD500-4T37G · 37kW", material: "—", qty: 4, unit: "台", brands: "汇川 / 西门子", techNote: "配制动单元与直流电抗器；面板可拆卸，随货提供参数表。", st: "w" },
+      { name: "PLC 控制器", spec: "S7-1200 CPU 1215C DC/DC/DC", material: "—", qty: 1, unit: "套", brands: "西门子", techNote: "含 2 块 SM1223 数字量模块、1 块 SM1231 模拟量模块；随货提供源程序。", st: "w" },
+      { name: "触摸屏", spec: "KTP1200 Basic PN · 12 寸", material: "—", qty: 1, unit: "台", brands: "西门子", techNote: "与 PLC 同品牌，工程文件随设备交付。", st: "w" },
+      { name: "软启动器", spec: "ATS48C25Q · 110kW", material: "—", qty: 2, unit: "台", brands: "施耐德", techNote: "用于 30kW 以上不调速电机；配旁路接触器。", st: "w" },
+    ],
+  },
+  {
+    name: "自制钣金件",
+    specs: [
+      { name: "控制柜柜体", spec: "2200×800×600 · IP54", material: "冷轧板 2.0", qty: 2, unit: "台", section: "自制件", techNote: "柜内照明、温控风扇标配；留 20% 备用回路空间；喷塑 RAL7035。", st: "w", hasDrawing: true },
+      { name: "电缆桥架", spec: "300×100 槽式", material: "热镀锌", qty: 120, unit: "m", section: "自制件", techNote: "穿越粉尘区域段须封堵；含盖板与连接件。", st: "w", hasDrawing: true },
+    ],
+  },
+];
+
+export function appendBatchSheets(prefix: string): Sheet[] {
+  return APPEND_BATCH_SPECS.map((t, i) => ({ id: `${prefix}-${i + 1}`, name: t.name, rows: buildRows(`${prefix}-${i + 1}`, t.specs) }));
+}

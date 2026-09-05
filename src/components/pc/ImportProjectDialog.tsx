@@ -21,7 +21,7 @@ const ITEMS = [
     title: "采购清单（技术部制表）",
     format: "xls / xlsx · 可多批",
     required: false,
-    desc: "解析各子系统行明细，保留制表 / 审核 / 批准签核状态，随后进入订货安排",
+    desc: "解析各子系统行明细，保留制表人与批准状态，随后进入订货安排",
     lands: "采购清单",
   },
   {
@@ -30,7 +30,7 @@ const ITEMS = [
     format: "xlsx · 可多份",
     required: false,
     desc: "按供应商建立子合同，回填清单覆盖关系，并按付款条款生成 M1–M4 里程碑",
-    lands: "子合同",
+    lands: "采购合同",
   },
   {
     icon: Receipt,

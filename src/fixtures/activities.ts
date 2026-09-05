@@ -3,12 +3,14 @@ import type { Activity } from "@/lib/types";
 // 照抄 Project.dc 时间线（p-20260510）
 export const activities: Activity[] = [
   { id: "a-1", projectId: "p-20260510", text: "锋杰合同交货逾期 5 天，已生成交货逾期提醒", at: "08-20 09:00", actor: "系统", tone: "danger" },
-  { id: "a-2", projectId: "p-20260510", text: "二粉(2) 第一批清单提交审核", at: "08-19 16:42", actor: "肖济忠", tone: "neutral" },
   { id: "a-3", projectId: "p-20260510", text: "章鼓合同 预付款 ¥86,400 已付", at: "08-12 10:15", actor: "财务", tone: "success" },
   { id: "a-4", projectId: "p-20260510", text: "收到章鼓 10% 发票 NO.05233108", at: "08-10 14:03", actor: "赵小燕", tone: "success" },
   { id: "a-5", projectId: "p-20260510", text: "锋杰合同 发货款 ¥607,500 已付", at: "06-28 11:20", actor: "财务", tone: "success" },
-  { id: "a-6", projectId: "p-20260510", text: "第一批采购清单批准通过", at: "05-30 17:36", actor: "", tone: "neutral" },
-  { id: "a-7", projectId: "p-20260510", text: "第一批采购清单创建（xlsx 上传解析）", at: "05-23 09:12", actor: "肖济忠", tone: "neutral" },
+  { id: "a-9", projectId: "p-20260510", text: "追加第二批采购清单批准（电气元件 4 项 · 自制钣金件 2 项），进入订货安排", at: "06-12 09:50", actor: "赵小燕", tone: "neutral" },
+  { id: "a-10", projectId: "p-20260510", text: "追加第二批采购清单上传入库（AI 解析 2 个 sheet · 6 行）", at: "06-10 15:20", actor: "肖济忠", tone: "neutral" },
+  { id: "a-6", projectId: "p-20260510", text: "第一批采购清单 v2 修正版批准（修正 3 项数量 · 补充 2 项品牌要求）", at: "05-30 17:36", actor: "赵小燕", tone: "neutral" },
+  { id: "a-8", projectId: "p-20260510", text: "第一批采购清单 v1 批准，进入订货安排", at: "05-25 10:20", actor: "赵小燕", tone: "neutral" },
+  { id: "a-7", projectId: "p-20260510", text: "第一批采购清单上传入库（AI 解析 7 个 sheet · 71 行）", at: "05-23 09:12", actor: "肖济忠", tone: "neutral" },
   // 其余项目各给少量动态
   { id: "a-11", projectId: "p-251230", text: "宏泰合同 验收款 ¥1,265,700 已付", at: "06-30 16:05", actor: "财务", tone: "success" },
   { id: "a-12", projectId: "p-251102", text: "项目关闭：全部合同完结、尾款结清", at: "07-31 15:20", actor: "赵小燕", tone: "neutral" },
@@ -17,6 +19,8 @@ export const activities: Activity[] = [
   { id: "a-14", projectId: "p-260812", text: "技术部已排期：第一批采购清单预计 08-28 提交", at: "08-15 14:10", actor: "肖济忠", tone: "neutral" },
   { id: "a-15", projectId: "p-260812", text: "项目合同 v1 客户签章版入库，AI 抓取 8 项重要条目", at: "08-12 09:40", actor: "赵小燕", tone: "neutral" },
   { id: "a-16", projectId: "p-260706", text: "订货安排：主轴轴承、密封件包已分配，耐磨衬板部分分配 12/32", at: "08-18 10:05", actor: "敬宏", tone: "neutral" },
-  { id: "a-17", projectId: "p-260706", text: "第一批采购清单提交审核 · 待核对 5 项", at: "08-14 16:30", actor: "肖济忠", tone: "neutral" },
+  { id: "a-19", projectId: "p-260706", text: "追加第二批采购清单上传入库（电气元件 4 项 · 自制钣金件 2 项）· 待批准", at: "08-19 15:40", actor: "肖济忠", tone: "neutral" },
+  { id: "a-20", projectId: "p-260706", text: "第一批采购清单批准，进入订货安排", at: "08-15 09:30", actor: "赵小燕", tone: "neutral" },
+  { id: "a-17", projectId: "p-260706", text: "第一批采购清单上传入库（AI 解析 12 行）", at: "08-14 16:30", actor: "肖济忠", tone: "neutral" },
   { id: "a-18", projectId: "p-260706", text: "项目合同 v2 技术协议附件补签", at: "07-21 11:00", actor: "敬宏", tone: "neutral" },
 ];

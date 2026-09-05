@@ -33,16 +33,15 @@ function EstimateCell({ est }: { est: EstInfo | null }) {
   );
 }
 
-/** 段头标签即筛选器：按订货安排结果 / 是否入合同筛行 */
-export type RowFilter = "all" | "allocated" | "need" | "uncovered" | "produce" | "pending" | "contracted";
+/** 段头标签即筛选器：一行只属于一桶——已分配 / 需采购（尚未入合同）/ 已入合同 / 安排生产 / 待核对；部分分配的行同时算已分配与需采购或已入合同 */
+export type RowFilter = "all" | "allocated" | "need" | "produce" | "pending" | "contracted";
 
 const FILTERS: { key: Exclude<RowFilter, "all">; label: string; tone: PillTone }[] = [
   { key: "allocated", label: "已分配", tone: "success" },
   { key: "need", label: "需采购", tone: "warning" },
-  { key: "uncovered", label: "待出合同", tone: "warning" },
+  { key: "contracted", label: "已入合同", tone: "info" },
   { key: "produce", label: "安排生产", tone: "info" },
   { key: "pending", label: "待核对", tone: "neutral" },
-  { key: "contracted", label: "已入合同", tone: "info" },
 ];
 
 function matches(r: ChecklistRow, f: RowFilter): boolean {
@@ -52,8 +51,6 @@ function matches(r: ChecklistRow, f: RowFilter): boolean {
     case "allocated":
       return r.alloc.status === "allocated" || r.alloc.status === "partial";
     case "need":
-      return r.alloc.status === "need" || r.alloc.status === "partial";
-    case "uncovered":
       return (r.alloc.status === "need" || r.alloc.status === "partial") && !r.contractId;
     case "produce":
       return r.alloc.status === "produce";
@@ -64,7 +61,7 @@ function matches(r: ChecklistRow, f: RowFilter): boolean {
   }
 }
 
-/** 可点击的状态标签：未选中沿用状态色，选中态用墨色（与筛选 chip / Tab 一致） */
+/** 可点击的状态标签：未选中沿用状态色，选中态用 chip-selected 浅底深字（与筛选 chip 一致） */
 function FilterPill({ tone, active, onClick, children }: { tone: PillTone; active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
     <button
@@ -72,7 +69,7 @@ function FilterPill({ tone, active, onClick, children }: { tone: PillTone; activ
       onClick={onClick}
       title={active ? "再点一次取消筛选" : "只看这一类"}
       className={`inline-flex cursor-pointer items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap transition-colors ${
-        active ? "bg-ink text-white" : `${PILL_TONE_CLASS[tone]} hover:brightness-95`
+        active ? "chip-selected" : `${PILL_TONE_CLASS[tone]} hover:brightness-95`
       }`}
     >
       {children}
@@ -87,14 +84,18 @@ function qtyText(r: ChecklistRow): string {
 function AllocCell({ r }: { r: ChecklistRow }) {
   const { allocated, need, status, produceBy } = r.alloc;
   if (status === "allocated") return <StatusPill tone="success">已分配 {allocated}</StatusPill>;
-  if (status === "need") {
-    return <StatusPill tone="warning">需采购 {typeof r.qty === "number" ? need : "若干"}</StatusPill>;
-  }
+  // 需采购的行一旦入了合同就显示「已入合同」，不再叫需采购（需采购 = 还没出合同）
+  const buyPill = r.contractId ? (
+    <StatusPill tone="info">已入合同 {typeof r.qty === "number" ? need : "若干"}</StatusPill>
+  ) : (
+    <StatusPill tone="warning">需采购 {typeof r.qty === "number" ? need : "若干"}</StatusPill>
+  );
+  if (status === "need") return buyPill;
   if (status === "partial") {
     return (
       <div className="flex flex-col gap-1">
         <StatusPill tone="success">已分配 {allocated}</StatusPill>
-        <StatusPill tone="warning">需采购 {need}</StatusPill>
+        {buyPill}
       </div>
     );
   }
@@ -139,6 +140,7 @@ function RowLine({
   onToggle,
   est,
   canSelect,
+  showAlloc,
 }: {
   r: ChecklistRow;
   sheetName: string;
@@ -146,8 +148,9 @@ function RowLine({
   onToggle: (id: string) => void;
   est: EstInfo | null;
   canSelect: boolean;
+  showAlloc: boolean;
 }) {
-  // 已分配的行无需再操作；安排生产的行保留可选，便于撤销或改为库存分配；只读模式（采购清单审核步）不显示复选框
+  // 已分配的行无需再操作；安排生产的行保留可选，便于撤销或改为库存分配；只读模式（采购清单校对步）不显示复选框
   const selectable = canSelect && r.alloc.status !== "allocated";
   return (
     <div className={`border-page flex items-start border-b px-4 py-3 text-[13px] ${selected ? "bg-[#FBFAF9]" : ""}`}>
@@ -194,12 +197,16 @@ function RowLine({
           }
         />
       </div>
-      <div className="w-[130px]">
-        <AllocCell r={r} />
-      </div>
-      <div className="w-[180px]">
-        <ContractCell r={r} />
-      </div>
+      {showAlloc && (
+        <>
+          <div className="w-[130px]">
+            <AllocCell r={r} />
+          </div>
+          <div className="w-[180px]">
+            <ContractCell r={r} />
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -210,14 +217,17 @@ export function ChecklistTable({
   onToggle,
   initialFilter = "all",
   selectable = true,
+  showAlloc = true,
 }: {
   sheet: Sheet;
   selection: Set<string>;
   onToggle: (id: string) => void;
-  /** 进入时的默认筛选（订货安排步默认「待核对」，子合同步默认「待出合同」） */
+  /** 进入时的默认筛选（订货安排步：有待核对先看待核对，否则看需采购） */
   initialFilter?: RowFilter;
-  /** false = 只读（采购清单审核步），不显示复选框 */
+  /** false = 只读（采购清单校对步），不显示复选框 */
   selectable?: boolean;
+  /** false = 采购清单步：不显示订货安排 / 合同两列与状态筛选，只校对技术部的明细 */
+  showAlloc?: boolean;
 }) {
   const [filter, setFilter] = useState<RowFilter>(initialFilter);
   const { estimateFor } = usePartsCatalog();
@@ -235,7 +245,7 @@ export function ChecklistTable({
     <div className="flex items-center gap-2 px-4 pt-3.5 pb-2">
       <div className="text-[13.5px] font-bold">{title}</div>
       <StatusPill tone="neutral">{rows.length} 项</StatusPill>
-      {FILTERS.map((f) => {
+      {showAlloc && FILTERS.map((f) => {
         const n = rows.filter((r) => matches(r, f.key)).length;
         if (n === 0) return null;
         return (
@@ -259,7 +269,7 @@ export function ChecklistTable({
       return <div className="text-faint border-page border-b px-4 py-3 text-[12.5px]">本段无「{activeLabel}」行</div>;
     }
     return shown.map((r) => (
-      <RowLine key={r.id} r={r} sheetName={sheet.name} selected={selection.has(r.id)} onToggle={onToggle} est={estOf(r)} canSelect={selectable} />
+      <RowLine key={r.id} r={r} sheetName={sheet.name} selected={selection.has(r.id)} onToggle={onToggle} est={estOf(r)} canSelect={selectable} showAlloc={showAlloc} />
     ));
   };
 
@@ -284,8 +294,12 @@ export function ChecklistTable({
           AI 预估单价
         </div>
         <div className="flex-1">品牌及技术要求</div>
-        <div className="w-[130px]">订货安排</div>
-        <div className="w-[180px]">合同</div>
+        {showAlloc && (
+          <>
+            <div className="w-[130px]">订货安排</div>
+            <div className="w-[180px]">合同</div>
+          </>
+        )}
       </div>
       {custom.length > 0 ? (
         <>

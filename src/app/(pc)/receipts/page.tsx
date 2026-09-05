@@ -104,7 +104,7 @@ export default function ReceiptsPage() {
               type="button"
               onClick={() => setFilter(k)}
               className={`cursor-pointer rounded-full px-3 py-1.25 text-[12.5px] font-medium ${
-                filter === k ? "bg-ink text-white" : "border-line text-ink-2 border bg-white"
+                filter === k ? "chip-selected" : "border-line text-ink-2 border bg-white"
               }`}
             >
               {label} {counts[k]}

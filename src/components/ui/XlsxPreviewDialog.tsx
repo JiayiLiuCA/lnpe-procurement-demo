@@ -1,6 +1,8 @@
 "use client";
 
-// 模拟 Excel 文件预览：表格网格 + 列字母 + 行号 + 底部 sheet 页签（纯展示 mock）
+// 模拟 Excel 文件预览：表格网格 + 列字母 + 行号 + 底部 sheet 页签。
+// 传 sheets 时页签可切换（采购清单多 sheet）；只传 sheetName + rows 时是单 sheet（项目合同）。
+import { useState } from "react";
 import { Download, FileSpreadsheet, X } from "lucide-react";
 import { Btn } from "./Btn";
 
@@ -20,7 +22,8 @@ export function XlsxPreviewDialog({
   onClose,
   fileName,
   sheetName = "合同",
-  rows,
+  rows = [],
+  sheets,
   downloadHref,
   downloadName,
 }: {
@@ -28,11 +31,16 @@ export function XlsxPreviewDialog({
   onClose: () => void;
   fileName: string;
   sheetName?: string;
-  rows: XlsxCell[][];
+  rows?: XlsxCell[][];
+  /** 多 sheet 工作簿：底部页签可切换 */
+  sheets?: { name: string; rows: XlsxCell[][] }[];
   downloadHref: string;
   downloadName: string;
 }) {
+  const [activeSheet, setActiveSheet] = useState(0);
   if (!open) return null;
+  const tabs = sheets && sheets.length > 0 ? sheets : [{ name: sheetName, rows }];
+  const current = tabs[Math.min(activeSheet, tabs.length - 1)];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(44,42,42,.45)] p-4" onClick={onClose}>
@@ -75,7 +83,7 @@ export function XlsxPreviewDialog({
               </tr>
             </thead>
             <tbody>
-              {rows.map((r, ri) => {
+              {current.rows.map((r, ri) => {
                 const used = r.reduce((s, c) => s + (c.span ?? 1), 0);
                 return (
                   <tr key={ri} className="bg-white">
@@ -101,11 +109,28 @@ export function XlsxPreviewDialog({
 
         {/* 底部 sheet 页签 */}
         <div className="border-line-soft flex items-center gap-1 border-t bg-[#F1F0EE] px-3 py-1.5">
-          <span className="border-line rounded-t-none rounded-b-none border-x border-b-2 border-b-[#1B8A4C] bg-white px-3 py-1 text-[11.5px] font-medium">
-            {sheetName}
-          </span>
-          <span className="text-faint px-2 py-1 text-[11.5px]">Sheet2</span>
-          <span className="text-faint px-2 py-1 text-[11.5px]">Sheet3</span>
+          {tabs.map((t, i) =>
+            t === current ? (
+              <span key={t.name} className="border-line rounded-t-none rounded-b-none border-x border-b-2 border-b-[#1B8A4C] bg-white px-3 py-1 text-[11.5px] font-medium whitespace-nowrap">
+                {t.name}
+              </span>
+            ) : (
+              <button
+                key={t.name}
+                type="button"
+                onClick={() => setActiveSheet(i)}
+                className="text-sub hover:text-ink cursor-pointer px-2 py-1 text-[11.5px] whitespace-nowrap"
+              >
+                {t.name}
+              </button>
+            ),
+          )}
+          {tabs.length === 1 && (
+            <>
+              <span className="text-faint px-2 py-1 text-[11.5px]">Sheet2</span>
+              <span className="text-faint px-2 py-1 text-[11.5px]">Sheet3</span>
+            </>
+          )}
           <div className="flex-1" />
           <span className="text-faint text-[11px]">100%</span>
         </div>
