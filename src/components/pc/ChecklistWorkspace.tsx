@@ -60,12 +60,11 @@ export function ChecklistWorkspace({ checklist, mode = "full", toolbar }: { chec
     contracted: allRows.filter((r) => !!r.contractId).length,
     pending: allRows.filter((r) => r.alloc.status === "pending").length,
   };
-  const uncovered = stats.need - stats.contracted;
   const showHeader = mode !== "review";
   const showSource = mode === "source" || mode === "full";
   const readOnly = mode === "review";
-  // 进入时先看待核对；核对完了看需采购（尚未出合同）；都没有就全量
-  const initialFilter: RowFilter = readOnly ? "all" : stats.pending > 0 ? "pending" : uncovered > 0 ? "need" : "all";
+  // 进入时不带任何筛选，全量显示；段头标签点一下才筛（用户反馈默认筛「需采购」会让人以为只有那几行）
+  const initialFilter: RowFilter = "all";
 
   // AI 预估采购额：需采购行（含部分分配）按预估单价 × 需采购数；自制、已分配、待核对不计
   const { estimateFor } = usePartsCatalog();

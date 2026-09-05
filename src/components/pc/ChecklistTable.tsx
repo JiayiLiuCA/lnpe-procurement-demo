@@ -222,7 +222,7 @@ export function ChecklistTable({
   sheet: Sheet;
   selection: Set<string>;
   onToggle: (id: string) => void;
-  /** 进入时的默认筛选（订货安排步：有待核对先看待核对，否则看需采购） */
+  /** 进入时的默认筛选（目前各步都不预设筛选，传 "all"） */
   initialFilter?: RowFilter;
   /** false = 只读（采购清单校对步），不显示复选框 */
   selectable?: boolean;
